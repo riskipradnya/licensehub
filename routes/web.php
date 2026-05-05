@@ -1,43 +1,71 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () { return redirect('/login'); });
+// ══════════════════════════════════════════════════════════════
+//  GUEST ROUTES (unauthenticated)
+// ══════════════════════════════════════════════════════════════
 
-// === Auth ===
-Route::get('/login', fn() => view('auth.login'))->name('login');
-Route::get('/register', fn() => view('auth.register'))->name('register');
-Route::get('/forgot-password', fn() => view('auth.forgot-password'))->name('password.request');
+Route::get('/', fn() => redirect('/login'));
 
-// === Dashboard ===
-Route::get('/dashboard', fn() => view('dashboard.index'))->name('dashboard');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
 
-// === Licenses ===
-Route::get('/licenses', fn() => view('licenses.index'))->name('licenses.index');
-Route::get('/licenses/create', fn() => view('licenses.create'))->name('licenses.create');
-Route::get('/licenses/{id}', fn() => view('licenses.show'))->name('licenses.show');
-Route::get('/licenses/{id}/edit', fn() => view('licenses.edit'))->name('licenses.edit');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
 
-// === Vendors ===
-Route::get('/vendors', fn() => view('vendors.index'))->name('vendors.index');
-Route::get('/vendors/create', fn() => view('vendors.create'))->name('vendors.create');
-Route::get('/vendors/{id}', fn() => view('vendors.show'))->name('vendors.show');
-Route::get('/vendors/{id}/edit', fn() => view('vendors.edit'))->name('vendors.edit');
+    Route::get('/forgot-password', fn() => view('auth.forgot-password'))->name('password.request');
+});
 
-// === Documents ===
-Route::get('/documents', fn() => view('documents.index'))->name('documents.index');
+// ══════════════════════════════════════════════════════════════
+//  AUTHENTICATED ROUTES
+// ══════════════════════════════════════════════════════════════
 
-// === Monitoring ===
-Route::get('/notifications', fn() => view('monitoring.notifications'))->name('notifications.index');
-Route::get('/cost-projection', fn() => view('monitoring.cost-projection'))->name('cost-projection.index');
-Route::get('/audit-log', fn() => view('monitoring.audit-log'))->name('audit-log.index');
+Route::middleware('auth')->group(function () {
 
-// === Finance ===
-Route::get('/payments', fn() => view('finance.payments'))->name('payments.index');
-Route::get('/payments/history', fn() => view('finance.payment-history'))->name('payments.history');
-Route::get('/invoices', fn() => view('finance.invoices'))->name('invoices.index');
-Route::get('/reports', fn() => view('finance.reports'))->name('reports.index');
+    // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// === Settings ===
-Route::get('/users', fn() => view('settings.users'))->name('users.index');
-Route::get('/profile', fn() => view('settings.profile'))->name('profile.index');
+    // === Dashboard ===
+    Route::get('/dashboard', fn() => view('dashboard.index'))->name('dashboard');
+
+    // === Licenses (IT & Finance can view, IT can manage) ===
+    Route::get('/licenses', fn() => view('licenses.index'))->name('licenses.index');
+    Route::get('/licenses/create', fn() => view('licenses.create'))->name('licenses.create');
+    Route::get('/licenses/{id}', fn() => view('licenses.show'))->name('licenses.show');
+    Route::get('/licenses/{id}/edit', fn() => view('licenses.edit'))->name('licenses.edit');
+
+    // === Vendors ===
+    Route::get('/vendors', fn() => view('vendors.index'))->name('vendors.index');
+    Route::get('/vendors/create', fn() => view('vendors.create'))->name('vendors.create');
+    Route::get('/vendors/{id}', fn() => view('vendors.show'))->name('vendors.show');
+    Route::get('/vendors/{id}/edit', fn() => view('vendors.edit'))->name('vendors.edit');
+
+    // === Documents ===
+    Route::get('/documents', fn() => view('documents.index'))->name('documents.index');
+
+    // === Monitoring ===
+    Route::get('/notifications', fn() => view('monitoring.notifications'))->name('notifications.index');
+    Route::get('/cost-projection', fn() => view('monitoring.cost-projection'))->name('cost-projection.index');
+
+    Route::middleware('role:super_admin,finance_manager')->group(function () {
+        Route::get('/audit-log', fn() => view('monitoring.audit-log'))->name('audit-log.index');
+    });
+
+    // === Finance (restricted to finance roles) ===
+    Route::middleware('role:finance_manager,finance_staff')->group(function () {
+        Route::get('/payments', fn() => view('finance.payments'))->name('payments.index');
+        Route::get('/payments/history', fn() => view('finance.payment-history'))->name('payments.history');
+        Route::get('/invoices', fn() => view('finance.invoices'))->name('invoices.index');
+        Route::get('/reports', fn() => view('finance.reports'))->name('reports.index');
+    });
+
+    // === Settings ===
+    Route::get('/profile', fn() => view('settings.profile'))->name('profile.index');
+
+    Route::middleware('role:super_admin')->group(function () {
+        Route::get('/users', fn() => view('settings.users'))->name('users.index');
+    });
+});

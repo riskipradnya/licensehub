@@ -65,9 +65,12 @@
                 <a href="/profile" class="block px-4 py-2 text-sm hover:bg-gray-50 transition"
                    style="color: var(--color-text-primary);">Profile & Preferences</a>
                 <hr style="border-color: var(--color-border);">
-                <a href="/logout" class="block px-4 py-2 text-sm hover:bg-gray-50 transition" style="color: #ef4444;">
-                    Logout
-                </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition" style="color: #ef4444;">
+                        Logout
+                    </button>
+                </form>
             </div>
         </div>
     </div>
