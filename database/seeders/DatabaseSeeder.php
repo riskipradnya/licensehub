@@ -92,6 +92,8 @@ class DatabaseSeeder extends Seeder
                 'phone'          => '+62-21-5555-0001',
                 'website'        => 'https://www.microsoft.com',
                 'address'        => 'Jakarta, Indonesia',
+                'sla_response'   => '24h',
+                'sla_hours'      => '24/7',
             ],
             [
                 'name'           => 'Oracle Corporation',
@@ -100,6 +102,8 @@ class DatabaseSeeder extends Seeder
                 'phone'          => '+62-21-5555-0002',
                 'website'        => 'https://www.oracle.com',
                 'address'        => 'Jakarta, Indonesia',
+                'sla_response'   => '48h',
+                'sla_hours'      => 'business',
             ],
             [
                 'name'           => 'Adobe Inc.',
@@ -108,6 +112,8 @@ class DatabaseSeeder extends Seeder
                 'phone'          => '+62-21-5555-0003',
                 'website'        => 'https://www.adobe.com',
                 'address'        => 'Jakarta, Indonesia',
+                'sla_response'   => '24h',
+                'sla_hours'      => 'business',
             ],
             [
                 'name'           => 'Kaspersky Lab',
@@ -116,6 +122,8 @@ class DatabaseSeeder extends Seeder
                 'phone'          => '+62-21-5555-0004',
                 'website'        => 'https://www.kaspersky.com',
                 'address'        => 'Jakarta, Indonesia',
+                'sla_response'   => '72h',
+                'sla_hours'      => 'business',
             ],
             [
                 'name'           => 'VMware (Broadcom)',
@@ -124,6 +132,8 @@ class DatabaseSeeder extends Seeder
                 'phone'          => '+62-21-5555-0005',
                 'website'        => 'https://www.vmware.com',
                 'address'        => 'Jakarta, Indonesia',
+                'sla_response'   => '24h',
+                'sla_hours'      => '24/7',
             ],
         ];
 

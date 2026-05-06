@@ -88,6 +88,39 @@ class License extends Model
                      ->where('status', '!=', 'cancelled');
     }
 
+    public function scopeFilterCategory($query, $categoryId)
+    {
+        if ($categoryId) {
+            return $query->where('category_id', $categoryId);
+        }
+
+        return $query;
+    }
+
+    public function scopeFilterStatus($query, $status)
+    {
+        if ($status) {
+            return $query->where('status', $status);
+        }
+
+        return $query;
+    }
+
+    public function scopeSearch($query, $search)
+    {
+        if ($search) {
+            return $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('serial_key', 'like', "%{$search}%")
+                  ->orWhereHas('vendor', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        return $query;
+    }
+
     // ─── Accessors ───────────────────────────────────────────
 
     public function getDaysUntilExpiryAttribute(): ?int
@@ -102,5 +135,55 @@ class License extends Model
     public function getIsExpiredAttribute(): bool
     {
         return $this->expiry_date && $this->expiry_date->isPast();
+    }
+
+    /**
+     * Format cost as Indonesian Rupiah string.
+     */
+    public function getFormattedCostAttribute(): string
+    {
+        return 'Rp ' . number_format((float) $this->cost, 0, ',', '.');
+    }
+
+    /**
+     * Get the CSS status color mapping for category badges.
+     */
+    public function getCategoryColorAttribute(): string
+    {
+        return match ($this->category?->slug) {
+            'os'        => 'active',
+            'software'  => 'info',
+            'antivirus' => 'warning',
+            'security'  => 'danger',
+            'database'  => 'info',
+            'cloud'     => 'active',
+            default     => 'info',
+        };
+    }
+
+    /**
+     * Get computed status based on expiry date.
+     */
+    public function getComputedStatusAttribute(): string
+    {
+        if ($this->type === 'perpetual' && !$this->expiry_date) {
+            return 'active';
+        }
+
+        if (!$this->expiry_date) {
+            return $this->status;
+        }
+
+        $daysLeft = $this->days_until_expiry;
+
+        if ($daysLeft !== null && $daysLeft <= 0) {
+            return 'expired';
+        }
+
+        if ($daysLeft !== null && $daysLeft <= 30) {
+            return 'expiring';
+        }
+
+        return 'active';
     }
 }

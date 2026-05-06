@@ -1,6 +1,10 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\LicenseController;
+use App\Http\Controllers\VendorController;
 use Illuminate\Support\Facades\Route;
 
 // ══════════════════════════════════════════════════════════════
@@ -29,22 +33,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // === Dashboard ===
-    Route::get('/dashboard', fn() => view('dashboard.index'))->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // === Licenses (IT & Finance can view, IT can manage) ===
-    Route::get('/licenses', fn() => view('licenses.index'))->name('licenses.index');
-    Route::get('/licenses/create', fn() => view('licenses.create'))->name('licenses.create');
-    Route::get('/licenses/{id}', fn() => view('licenses.show'))->name('licenses.show');
-    Route::get('/licenses/{id}/edit', fn() => view('licenses.edit'))->name('licenses.edit');
+    Route::resource('licenses', LicenseController::class);
 
     // === Vendors ===
-    Route::get('/vendors', fn() => view('vendors.index'))->name('vendors.index');
-    Route::get('/vendors/create', fn() => view('vendors.create'))->name('vendors.create');
-    Route::get('/vendors/{id}', fn() => view('vendors.show'))->name('vendors.show');
-    Route::get('/vendors/{id}/edit', fn() => view('vendors.edit'))->name('vendors.edit');
+    Route::resource('vendors', VendorController::class);
 
     // === Documents ===
-    Route::get('/documents', fn() => view('documents.index'))->name('documents.index');
+    Route::resource('documents', DocumentController::class)->only(['index', 'store', 'show', 'destroy']);
 
     // === Monitoring ===
     Route::get('/notifications', fn() => view('monitoring.notifications'))->name('notifications.index');

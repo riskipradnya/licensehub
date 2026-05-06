@@ -13,19 +13,20 @@
 
     {{-- FILTER --}}
     <div class="card mb-6">
-        <div class="flex flex-col md:flex-row gap-3">
+        <form method="GET" action="{{ route('documents.index') }}" class="flex flex-col md:flex-row gap-3">
             <div class="relative flex-1">
                 <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--color-text-secondary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" placeholder="Cari dokumen..." class="form-input pl-10" id="doc-search">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari dokumen..." class="form-input pl-10" id="doc-search">
             </div>
-            <select class="form-input w-full md:w-48">
+            <select name="type" class="form-input w-full md:w-48" onchange="this.form.submit()">
                 <option value="">All Types</option>
-                <option>Contract</option>
-                <option>Invoice</option>
-                <option>Certificate</option>
-                <option>Quotation</option>
+                <option value="Contract" @selected(request('type') === 'Contract')>Contract</option>
+                <option value="Invoice" @selected(request('type') === 'Invoice')>Invoice</option>
+                <option value="Certificate" @selected(request('type') === 'Certificate')>Certificate</option>
+                <option value="Quotation" @selected(request('type') === 'Quotation')>Quotation</option>
+                <option value="Other" @selected(request('type') === 'Other')>Other</option>
             </select>
-        </div>
+        </form>
     </div>
 
     {{-- DOCUMENTS TABLE --}}
@@ -35,56 +36,100 @@
                 <tr><th>Document Name</th><th>Type</th><th>Related License</th><th>Size</th><th>Uploaded</th><th>Uploaded By</th><th class="text-center">Actions</th></tr>
             </thead>
             <tbody>
-                @php
-                $docs = [
-                    ['name' => 'Kontrak_MS365_2025.pdf', 'type' => 'Contract', 'license' => 'Microsoft 365', 'size' => '2.1 MB', 'date' => '28 Apr 2025', 'by' => 'Admin'],
-                    ['name' => 'Invoice_Oracle_2026.pdf', 'type' => 'Invoice', 'license' => 'Oracle Database', 'size' => '1.4 MB', 'date' => '15 Mar 2026', 'by' => 'IT Staff'],
-                    ['name' => 'Cert_Kaspersky_2025.pdf', 'type' => 'Certificate', 'license' => 'Kaspersky Endpoint', 'size' => '890 KB', 'date' => '10 Jan 2025', 'by' => 'Admin'],
-                    ['name' => 'Quotation_Adobe_2026.pdf', 'type' => 'Quotation', 'license' => 'Adobe CC', 'size' => '3.2 MB', 'date' => '01 Mar 2026', 'by' => 'IT Staff'],
-                    ['name' => 'Invoice_VMware_2025.pdf', 'type' => 'Invoice', 'license' => 'VMware vSphere', 'size' => '1.8 MB', 'date' => '20 Feb 2025', 'by' => 'Admin'],
-                ];
-                @endphp
-                @foreach($docs as $doc)
+                @forelse($documents as $doc)
                 <tr>
-                    <td class="font-medium flex items-center gap-2">
-                        <svg class="w-4 h-4 shrink-0" style="color: var(--color-status-danger);" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18h10v-2H7v2zM7 14h10v-2H7v2zM7 10h6V8H7v2zm-2 8V4h14v14H5zm0 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2z"/></svg>
-                        {{ $doc['name'] }}
+                    <td class="font-medium">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 shrink-0" style="color: var(--color-status-danger);" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18h10v-2H7v2zM7 14h10v-2H7v2zM7 10h6V8H7v2zm-2 8V4h14v14H5zm0 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2z"/></svg>
+                            {{ $doc->file_name }}
+                        </div>
                     </td>
-                    <td><span class="badge badge--info text-[10px]">{{ $doc['type'] }}</span></td>
-                    <td>{{ $doc['license'] }}</td>
-                    <td>{{ $doc['size'] }}</td>
-                    <td>{{ $doc['date'] }}</td>
-                    <td>{{ $doc['by'] }}</td>
+                    <td><span class="badge badge--info text-[10px]">{{ $doc->file_type }}</span></td>
+                    <td>
+                        @if($doc->license)
+                            <a href="{{ route('licenses.show', $doc->license) }}" class="hover:underline" style="color: var(--color-primary);">{{ $doc->license->name }}</a>
+                        @else
+                            —
+                        @endif
+                    </td>
+                    <td>{{ $doc->file_size_formatted }}</td>
+                    <td>{{ $doc->created_at->format('d M Y') }}</td>
+                    <td>{{ $doc->uploader->name ?? '—' }}</td>
                     <td class="text-center">
                         <div class="flex items-center justify-center gap-1">
-                            <button class="btn-ghost p-1.5 rounded-lg" title="View"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
-                            <button class="btn-ghost p-1.5 rounded-lg" title="Download"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-                            <button class="btn-ghost p-1.5 rounded-lg hover:text-red-500" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                            <a href="{{ route('documents.show', $doc) }}" class="btn-ghost p-1.5 rounded-lg" title="Download">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            </a>
+                            <form method="POST" action="{{ route('documents.destroy', $doc) }}" class="inline" onsubmit="return confirm('Hapus dokumen ini?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn-ghost p-1.5 rounded-lg hover:text-red-500" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="7" class="text-center py-8">
+                        <p class="text-sm" style="color: var(--color-text-secondary);">Belum ada dokumen. Upload dokumen pertama Anda.</p>
+                    </td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
+        @if($documents->hasPages())
+        <div class="px-6 py-3 flex items-center justify-between" style="border-top: 1px solid var(--color-border);">
+            <span class="text-xs" style="color: var(--color-text-secondary);">
+                Showing {{ $documents->firstItem() }}–{{ $documents->lastItem() }} of {{ $documents->total() }}
+            </span>
+            <div>{{ $documents->links('pagination::tailwind') }}</div>
+        </div>
+        @endif
     </div>
 
     {{-- UPLOAD MODAL --}}
     <x-modal id="upload-doc" title="Upload Document" maxWidth="md">
-        <form id="upload-doc-form">
+        <form method="POST" action="{{ route('documents.store') }}" enctype="multipart/form-data" id="upload-doc-form">
+            @csrf
             <div class="mb-4">
-                <label class="form-label">Related License</label>
-                <select class="form-input"><option>Pilih Lisensi...</option><option>Microsoft 365</option><option>Oracle Database</option></select>
+                <label class="form-label">Related License <span style="color: var(--color-status-danger);">*</span></label>
+                <select name="license_id" class="form-input" required>
+                    <option value="" disabled selected>Pilih Lisensi...</option>
+                    @foreach($licenses as $license)
+                        <option value="{{ $license->id }}">{{ $license->name }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="mb-4">
-                <label class="form-label">Document Type</label>
-                <select class="form-input"><option>Contract</option><option>Invoice</option><option>Certificate</option><option>Quotation</option></select>
+                <label class="form-label">Description</label>
+                <input type="text" name="description" class="form-input" placeholder="e.g. Kontrak tahunan 2026">
             </div>
-            <x-file-upload name="file" accept=".pdf,.doc,.docx" maxSize="10" />
+            <div class="mb-4">
+                <label class="form-label">File <span style="color: var(--color-status-danger);">*</span></label>
+                <input type="file" name="file" class="form-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" required>
+                <p class="text-xs mt-1" style="color: var(--color-text-secondary);">Max 10 MB • PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</p>
+            </div>
             <x-slot:footer>
                 <button type="button" @click="hide()" class="btn btn-secondary">Cancel</button>
-                <button type="submit" class="btn btn-primary">Upload</button>
+                <button type="submit" class="btn btn-primary">📤 Upload</button>
             </x-slot:footer>
         </form>
     </x-modal>
+
+    {{-- Flash toast --}}
+    @if(session('success'))
+    @push('scripts')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: @json(session('success')), type: 'success' }
+                }));
+            }, 300);
+        });
+    </script>
+    @endpush
+    @endif
 
 </x-app-layout>

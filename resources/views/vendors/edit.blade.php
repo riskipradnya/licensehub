@@ -1,31 +1,83 @@
-<x-app-layout title="Edit Vendor" :breadcrumbs="[['label' => 'Vendor Management', 'url' => '/vendors'], ['label' => 'Edit Vendor']]">
+<x-app-layout title="Edit Vendor" :breadcrumbs="[['label' => 'Vendor Management', 'url' => route('vendors.index')], ['label' => $vendor->name, 'url' => route('vendors.show', $vendor)], ['label' => 'Edit']]">
     <div class="max-w-2xl mx-auto">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">Edit Vendor</h2>
-            <a href="/vendors" class="btn btn-secondary text-sm">← Back</a>
+            <a href="{{ route('vendors.show', $vendor) }}" class="btn btn-secondary text-sm">← Back</a>
         </div>
-        <form method="POST" action="/vendors/1" x-data="{ loading: false }" @submit="loading = true" id="edit-vendor-form">
+        <form method="POST" action="{{ route('vendors.update', $vendor) }}" x-data="{ loading: false }" @submit="loading = true" id="edit-vendor-form">
             @csrf @method('PUT')
             <div class="card mb-6">
                 <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Vendor Information</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2"><label class="form-label">Vendor Name *</label><input type="text" name="name" class="form-input" value="Microsoft" required></div>
-                    <div class="md:col-span-2"><label class="form-label">Address</label><textarea name="address" rows="2" class="form-input">One Microsoft Way, Redmond, WA</textarea></div>
-                    <div><label class="form-label">Email Support *</label><input type="email" name="email" class="form-input" value="support@microsoft.com" required></div>
-                    <div><label class="form-label">Phone</label><input type="tel" name="phone" class="form-input" value="+1-800-642-7676"></div>
+                    <div class="md:col-span-2">
+                        <label class="form-label">Vendor Name <span style="color: var(--color-status-danger);">*</span></label>
+                        <input type="text" name="name" class="form-input @error('name') border-red-500 @enderror" value="{{ old('name', $vendor->name) }}" required>
+                        @error('name') <p class="form-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="form-label">Contact Person</label>
+                        <input type="text" name="contact_person" class="form-input" value="{{ old('contact_person', $vendor->contact_person) }}">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" rows="2" class="form-input">{{ old('address', $vendor->address) }}</textarea>
+                    </div>
+                    <div>
+                        <label class="form-label">Email Support <span style="color: var(--color-status-danger);">*</span></label>
+                        <input type="email" name="email" class="form-input @error('email') border-red-500 @enderror" value="{{ old('email', $vendor->email) }}" required>
+                        @error('email') <p class="form-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="form-label">Phone</label>
+                        <input type="tel" name="phone" class="form-input" value="{{ old('phone', $vendor->phone) }}">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="form-label">Website</label>
+                        <input type="url" name="website" class="form-input @error('website') border-red-500 @enderror" value="{{ old('website', $vendor->website) }}">
+                        @error('website') <p class="form-error">{{ $message }}</p> @enderror
+                    </div>
                 </div>
             </div>
             <div class="card mb-6">
                 <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">SLA Details</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label class="form-label">Response Time</label><select name="sla_response" class="form-input"><option value="24h" selected>24 Hours</option><option value="48h">48 Hours</option><option value="72h">72 Hours</option></select></div>
-                    <div><label class="form-label">Support Hours</label><select name="sla_hours" class="form-input"><option value="24/7" selected>24/7</option><option value="business">Business Hours</option></select></div>
+                    <div>
+                        <label class="form-label">Response Time</label>
+                        <select name="sla_response" class="form-input">
+                            <option value="">— Pilih —</option>
+                            <option value="24h" @selected(old('sla_response', $vendor->sla_response) === '24h')>24 Hours</option>
+                            <option value="48h" @selected(old('sla_response', $vendor->sla_response) === '48h')>48 Hours</option>
+                            <option value="72h" @selected(old('sla_response', $vendor->sla_response) === '72h')>72 Hours</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Support Hours</label>
+                        <select name="sla_hours" class="form-input">
+                            <option value="">— Pilih —</option>
+                            <option value="24/7" @selected(old('sla_hours', $vendor->sla_hours) === '24/7')>24/7</option>
+                            <option value="business" @selected(old('sla_hours', $vendor->sla_hours) === 'business')>Business Hours (9-17)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
+            <div class="card mb-6">
+                <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Notes</h3>
+                <textarea name="notes" rows="3" class="form-input">{{ old('notes', $vendor->notes) }}</textarea>
+            </div>
             <div class="flex items-center justify-between">
-                <button type="button" class="btn btn-danger text-sm">🗑 Delete Vendor</button>
+                <div x-data="{ confirmDelete: false }">
+                    <button type="button" class="btn btn-danger text-sm" x-show="!confirmDelete" @click="confirmDelete = true">🗑 Delete Vendor</button>
+                    <div x-show="confirmDelete" class="flex items-center gap-2" x-transition>
+                        <span class="text-sm" style="color: var(--color-status-danger);">Yakin hapus?</span>
+                        <form method="POST" action="{{ route('vendors.destroy', $vendor) }}" class="inline">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn btn-danger text-sm">Ya, Hapus</button>
+                        </form>
+                        <button type="button" class="btn btn-secondary text-sm" @click="confirmDelete = false">Batal</button>
+                    </div>
+                </div>
                 <div class="flex gap-3">
-                    <a href="/vendors" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ route('vendors.show', $vendor) }}" class="btn btn-secondary">Cancel</a>
                     <button type="submit" class="btn btn-primary" :disabled="loading"><span x-text="loading ? 'Saving...' : '💾 Update Vendor'">💾 Update Vendor</span></button>
                 </div>
             </div>
