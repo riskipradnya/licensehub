@@ -1,0 +1,157 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AuditLog;
+use App\Models\License;
+use App\Models\Payment;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class PaymentController extends Controller
+{
+    /**
+     * Display active/pending payments (Process Payment page).
+     */
+    public function index(Request $request): View
+    {
+        $query = Payment::with(['license.vendor', 'creator', 'approver'])
+            ->latest('payment_date');
+
+        // Status filter
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        $payments = $query->paginate(15)->withQueryString();
+
+        // Summary stats
+        $pendingCount  = Payment::where('status', 'pending')->count();
+        $pendingAmount = (float) Payment::where('status', 'pending')->sum('amount');
+        $approvedCount = Payment::where('status', 'approved')->count();
+        $paidTotal     = (float) Payment::where('status', 'paid')->sum('amount');
+
+        // Licenses for creating new payment
+        $licenses = License::with('vendor')->orderBy('name')->get();
+
+        return view('finance.payments', compact(
+            'payments', 'pendingCount', 'pendingAmount',
+            'approvedCount', 'paidTotal', 'licenses',
+        ));
+    }
+
+    /**
+     * Store a new payment request.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'license_id'     => ['required', 'exists:licenses,id'],
+            'amount'         => ['required', 'numeric', 'min:1'],
+            'payment_date'   => ['required', 'date'],
+            'payment_method' => ['nullable', 'in:transfer,credit_card,e_wallet,cash'],
+            'notes'          => ['nullable', 'string', 'max:2000'],
+        ], [
+            'license_id.required'   => 'Lisensi wajib dipilih.',
+            'amount.required'       => 'Jumlah pembayaran wajib diisi.',
+            'payment_date.required' => 'Tanggal pembayaran wajib diisi.',
+        ]);
+
+        $validated['created_by'] = auth()->id();
+        $validated['status'] = 'pending';
+
+        $payment = Payment::create($validated);
+
+        AuditLog::log('created', 'Payment', $payment->id, null, $validated);
+
+        return redirect()
+            ->route('payments.index')
+            ->with('success', 'Payment request berhasil dibuat.');
+    }
+
+    /**
+     * Approve a pending payment (Finance Manager only).
+     */
+    public function approve(Payment $payment): RedirectResponse
+    {
+        if (!$payment->isPending()) {
+            return back()->with('error', 'Payment ini sudah diproses.');
+        }
+
+        $oldStatus = $payment->status;
+        $payment->approve(auth()->user());
+
+        AuditLog::log('approved', 'Payment', $payment->id,
+            ['status' => $oldStatus],
+            ['status' => 'approved', 'approved_by' => auth()->id()]
+        );
+
+        return back()->with('success', "Payment untuk \"{$payment->license->name}\" berhasil diapprove.");
+    }
+
+    /**
+     * Mark an approved payment as paid.
+     */
+    public function markPaid(Request $request, Payment $payment): RedirectResponse
+    {
+        if ($payment->status !== 'approved') {
+            return back()->with('error', 'Payment harus diapprove terlebih dahulu.');
+        }
+
+        $validated = $request->validate([
+            'payment_method'   => ['required', 'in:transfer,credit_card,e_wallet,cash'],
+            'reference_number' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $payment->update([
+            'status'           => 'paid',
+            'payment_method'   => $validated['payment_method'],
+            'reference_number' => $validated['reference_number'] ?? null,
+        ]);
+
+        AuditLog::log('paid', 'Payment', $payment->id, null, [
+            'status'           => 'paid',
+            'payment_method'   => $validated['payment_method'],
+            'reference_number' => $validated['reference_number'] ?? null,
+        ]);
+
+        return back()->with('success', "Payment berhasil dikonfirmasi sebagai Paid.");
+    }
+
+    /**
+     * Reject a pending payment.
+     */
+    public function reject(Payment $payment): RedirectResponse
+    {
+        if (!$payment->isPending()) {
+            return back()->with('error', 'Payment ini sudah diproses.');
+        }
+
+        $payment->update(['status' => 'rejected']);
+
+        AuditLog::log('rejected', 'Payment', $payment->id, null, ['status' => 'rejected']);
+
+        return back()->with('success', "Payment berhasil ditolak.");
+    }
+
+    /**
+     * Payment History page (all completed/past payments).
+     */
+    public function history(Request $request): View
+    {
+        $query = Payment::with(['license.vendor', 'creator', 'approver'])
+            ->latest('payment_date');
+
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+        if ($method = $request->input('method')) {
+            $query->where('payment_method', $method);
+        }
+
+        $payments = $query->paginate(15)->withQueryString();
+
+        return view('finance.payment-history', compact('payments'));
+    }
+}

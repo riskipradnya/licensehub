@@ -13,9 +13,27 @@
 
     {{-- SUMMARY CARDS --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <x-stat-card label="Total Invoices" :value="48" variant="info" />
-        <x-stat-card label="Unpaid Amount" :value="96000000" variant="warning" prefix="Rp " />
-        <x-stat-card label="Paid This Month" :value="75500000" variant="active" prefix="Rp " />
+        <x-stat-card label="Total Invoices" :value="$totalInvoices" variant="info" />
+        <x-stat-card label="Unpaid Amount" :value="$unpaidAmount" variant="warning" prefix="Rp " />
+        <x-stat-card label="Paid This Month" :value="$paidThisMonth" variant="active" prefix="Rp " />
+    </div>
+
+    {{-- FILTER --}}
+    <div class="card mb-6">
+        <form method="GET" action="{{ route('invoices.index') }}" class="flex flex-col md:flex-row gap-3">
+            <div class="relative flex-1">
+                <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--color-text-secondary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari invoice..." class="form-input pl-10">
+            </div>
+            <select name="status" class="form-input w-full md:w-40" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="draft" @selected(request('status') === 'draft')>Draft</option>
+                <option value="sent" @selected(request('status') === 'sent')>Sent</option>
+                <option value="paid" @selected(request('status') === 'paid')>Paid</option>
+                <option value="overdue" @selected(request('status') === 'overdue')>Overdue</option>
+                <option value="cancelled" @selected(request('status') === 'cancelled')>Cancelled</option>
+            </select>
+        </form>
     </div>
 
     {{-- INVOICE TABLE --}}
@@ -24,53 +42,123 @@
             <table class="data-table" id="invoices-table">
                 <thead><tr><th>Invoice #</th><th>License</th><th>Vendor</th><th>Issued</th><th>Due</th><th>Amount</th><th>Status</th><th class="text-center">Actions</th></tr></thead>
                 <tbody>
-                    @php
-                    $invoices = [
-                        ['inv' => 'INV-2026-052', 'license' => 'Kaspersky Endpoint', 'vendor' => 'Kaspersky', 'issued' => '10 Apr 2026', 'due' => '15 Apr 2026', 'amount' => 8500000, 'status' => 'pending'],
-                        ['inv' => 'INV-2026-051', 'license' => 'Oracle Database', 'vendor' => 'Oracle', 'issued' => '07 Apr 2026', 'due' => '21 Apr 2026', 'amount' => 45000000, 'status' => 'pending'],
-                        ['inv' => 'INV-2026-050', 'license' => 'Microsoft 365', 'vendor' => 'Microsoft', 'issued' => '05 Apr 2026', 'due' => '28 Apr 2026', 'amount' => 12000000, 'status' => 'pending'],
-                        ['inv' => 'INV-2026-048', 'license' => 'Adobe CC', 'vendor' => 'Adobe', 'issued' => '01 Apr 2026', 'due' => '10 Apr 2026', 'amount' => 18000000, 'status' => 'paid'],
-                        ['inv' => 'INV-2026-047', 'license' => 'VMware vSphere', 'vendor' => 'VMware', 'issued' => '25 Mar 2026', 'due' => '08 Apr 2026', 'amount' => 32000000, 'status' => 'paid'],
-                    ];
-                    @endphp
-                    @foreach($invoices as $inv)
+                    @forelse($invoices as $inv)
                     <tr>
-                        <td class="font-mono text-xs font-medium" style="color: var(--color-primary);">{{ $inv['inv'] }}</td>
-                        <td class="font-medium">{{ $inv['license'] }}</td>
-                        <td>{{ $inv['vendor'] }}</td>
-                        <td>{{ $inv['issued'] }}</td>
-                        <td>{{ $inv['due'] }}</td>
-                        <td class="font-semibold">Rp {{ number_format($inv['amount'], 0, ',', '.') }}</td>
-                        <td><x-status-badge :status="$inv['status']" size="sm" /></td>
+                        <td class="font-mono text-xs font-medium" style="color: var(--color-primary);">{{ $inv->invoice_number }}</td>
+                        <td class="font-medium">{{ $inv->license->name ?? '—' }}</td>
+                        <td>{{ $inv->vendor->name ?? '—' }}</td>
+                        <td>{{ $inv->invoice_date->format('d M Y') }}</td>
+                        <td>
+                            @if($inv->isOverdue())
+                                <span style="color: var(--color-status-danger);">{{ $inv->due_date->format('d M Y') }}</span>
+                            @else
+                                {{ $inv->due_date?->format('d M Y') ?? '—' }}
+                            @endif
+                        </td>
+                        <td class="font-semibold">Rp {{ number_format((float)$inv->total_amount, 0, ',', '.') }}</td>
+                        <td><x-status-badge :status="$inv->status === 'sent' ? 'expiring' : ($inv->status === 'overdue' ? 'expired' : $inv->status)" :label="ucfirst($inv->status)" size="sm" /></td>
                         <td class="text-center">
-                            <div class="flex items-center justify-center gap-1">
-                                <button class="btn-ghost p-1.5 rounded-lg" title="View"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
-                                <button class="btn-ghost p-1.5 rounded-lg" title="Download PDF"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
-                                <button class="btn-ghost p-1.5 rounded-lg" title="Print"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
+                            <div class="flex items-center justify-center gap-1" x-data="{ showStatus: false }">
+                                {{-- Status Change --}}
+                                <div class="relative">
+                                    <button @click="showStatus = !showStatus" class="btn-ghost p-1.5 rounded-lg" title="Change Status">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    </button>
+                                    <div x-show="showStatus" @click.away="showStatus = false" x-transition class="absolute right-0 mt-1 w-32 rounded-lg shadow-lg z-10" style="background: var(--color-card-bg); border: 1px solid var(--color-border);">
+                                        @foreach(['draft', 'sent', 'paid', 'overdue', 'cancelled'] as $st)
+                                            @if($st !== $inv->status)
+                                            <form method="POST" action="{{ route('invoices.updateStatus', $inv) }}">
+                                                @csrf
+                                                <input type="hidden" name="status" value="{{ $st }}">
+                                                <button type="submit" class="w-full text-left text-xs px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 capitalize">{{ $st }}</button>
+                                            </form>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                                {{-- Delete --}}
+                                <form method="POST" action="{{ route('invoices.destroy', $inv) }}" class="inline" onsubmit="return confirm('Hapus invoice ini?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn-ghost p-1.5 rounded-lg hover:text-red-500" title="Delete">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center py-8">
+                            <p class="text-sm" style="color: var(--color-text-secondary);">Belum ada invoice.</p>
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
+        @if($invoices->hasPages())
+        <div class="px-6 py-3 flex items-center justify-between" style="border-top: 1px solid var(--color-border);">
+            <span class="text-xs" style="color: var(--color-text-secondary);">Showing {{ $invoices->firstItem() }}–{{ $invoices->lastItem() }} of {{ $invoices->total() }}</span>
+            <div>{{ $invoices->links('pagination::tailwind') }}</div>
+        </div>
+        @endif
     </div>
 
     {{-- CREATE INVOICE MODAL --}}
     <x-modal id="create-invoice" title="Create Invoice" maxWidth="md">
-        <form>
+        <form method="POST" action="{{ route('invoices.store') }}" id="create-invoice-form">
+            @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div class="md:col-span-2"><label class="form-label">Related License *</label><select class="form-input"><option>Pilih Lisensi...</option><option>Kaspersky Endpoint</option><option>Oracle Database</option><option>Microsoft 365</option></select></div>
-                <div><label class="form-label">Issue Date *</label><input type="date" class="form-input"></div>
-                <div><label class="form-label">Due Date *</label><input type="date" class="form-input"></div>
-                <div class="md:col-span-2"><label class="form-label">Amount (Rp) *</label><input type="number" class="form-input" placeholder="0"></div>
-                <div class="md:col-span-2"><label class="form-label">Notes</label><textarea class="form-input" rows="2" placeholder="Catatan invoice..."></textarea></div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Related License <span style="color: var(--color-status-danger);">*</span></label>
+                    <select name="license_id" class="form-input" required>
+                        <option value="" disabled selected>Pilih Lisensi...</option>
+                        @foreach($licenses as $license)
+                            <option value="{{ $license->id }}">{{ $license->name }} — {{ $license->vendor->name ?? '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Issue Date <span style="color: var(--color-status-danger);">*</span></label>
+                    <input type="date" name="invoice_date" class="form-input" value="{{ now()->format('Y-m-d') }}" required>
+                </div>
+                <div>
+                    <label class="form-label">Due Date <span style="color: var(--color-status-danger);">*</span></label>
+                    <input type="date" name="due_date" class="form-input" value="{{ now()->addDays(14)->format('Y-m-d') }}" required>
+                </div>
+                <div>
+                    <label class="form-label">Amount (Rp) <span style="color: var(--color-status-danger);">*</span></label>
+                    <input type="number" name="amount" class="form-input" placeholder="0" required min="1">
+                </div>
+                <div>
+                    <label class="form-label">Tax (Rp)</label>
+                    <input type="number" name="tax_amount" class="form-input" placeholder="0" min="0" value="0">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-input" rows="2" placeholder="Catatan invoice..."></textarea>
+                </div>
             </div>
             <x-slot:footer>
                 <button type="button" @click="hide()" class="btn btn-secondary">Cancel</button>
-                <button type="submit" class="btn btn-primary">Create Invoice</button>
+                <button type="submit" class="btn btn-primary">📝 Create Invoice</button>
             </x-slot:footer>
         </form>
     </x-modal>
+
+    {{-- Flash toast --}}
+    @if(session('success'))
+    @push('scripts')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: @json(session('success')), type: 'success' }
+                }));
+            }, 300);
+        });
+    </script>
+    @endpush
+    @endif
 
 </x-app-layout>

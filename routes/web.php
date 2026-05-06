@@ -3,7 +3,9 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LicenseController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\VendorController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,9 +56,20 @@ Route::middleware('auth')->group(function () {
 
     // === Finance (restricted to finance roles) ===
     Route::middleware('role:finance_manager,finance_staff')->group(function () {
-        Route::get('/payments', fn() => view('finance.payments'))->name('payments.index');
-        Route::get('/payments/history', fn() => view('finance.payment-history'))->name('payments.history');
-        Route::get('/invoices', fn() => view('finance.invoices'))->name('invoices.index');
+        // Payments
+        Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+        Route::post('/payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
+        Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
+        Route::post('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.markPaid');
+        Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+
+        // Invoices
+        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::post('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.updateStatus');
+        Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+
         Route::get('/reports', fn() => view('finance.reports'))->name('reports.index');
     });
 
