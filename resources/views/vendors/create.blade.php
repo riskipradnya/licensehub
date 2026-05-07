@@ -61,6 +61,19 @@
                 </div>
             </div>
             <div class="card mb-6">
+                <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Bank Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">Bank Name</label>
+                        <input type="text" name="bank_name" class="form-input" placeholder="e.g. BCA, Mandiri, BNI" value="{{ old('bank_name') }}">
+                    </div>
+                    <div>
+                        <label class="form-label">Account Number</label>
+                        <input type="text" name="bank_account_number" class="form-input font-mono" placeholder="e.g. 1234567890" value="{{ old('bank_account_number') }}">
+                    </div>
+                </div>
+            </div>
+            <div class="card mb-6">
                 <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Notes</h3>
                 <textarea name="notes" rows="3" class="form-input" placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
             </div>

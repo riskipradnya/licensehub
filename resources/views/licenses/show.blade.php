@@ -28,7 +28,7 @@
                 <a href="{{ route('licenses.index') }}" class="btn btn-secondary text-sm">← Back</a>
                 <a href="{{ route('licenses.edit', $license) }}" class="btn btn-secondary text-sm">✏️ Edit</a>
                 @if($license->status === 'expiring' || $license->status === 'expired')
-                <a href="/payments/process/{{ $license->id }}" class="btn btn-primary text-sm">💳 Renew Now</a>
+                <a href="{{ route('payments.renew', $license) }}" class="btn btn-primary text-sm">💳 Renew Now</a>
                 @endif
             </div>
         </div>
@@ -106,7 +106,7 @@
                     <p class="text-4xl font-bold" style="color: var(--color-text-primary);">{{ abs($license->days_until_expiry) }}</p>
                     <p class="text-sm" style="color: var(--color-text-secondary);">{{ $license->days_until_expiry <= 0 ? 'hari yang lalu' : 'hari tersisa' }}</p>
                     @if($license->days_until_expiry > 0 && $license->days_until_expiry <= 30)
-                    <a href="/payments/process/{{ $license->id }}" class="btn btn-primary w-full mt-4 text-sm">💳 Renew Now</a>
+                    <a href="{{ route('payments.renew', $license) }}" class="btn btn-primary w-full mt-4 text-sm">💳 Renew Now</a>
                     @endif
                 </div>
                 @else

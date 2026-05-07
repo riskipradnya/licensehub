@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LicenseController;
+use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\VendorController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,9 @@ use Illuminate\Support\Facades\Route;
 // ══════════════════════════════════════════════════════════════
 
 Route::get('/', fn() => redirect('/login'));
+
+// Midtrans notification webhook (no auth — called server-to-server by Midtrans)
+Route::post('/midtrans/notification', [MidtransController::class, 'handleNotification'])->name('midtrans.notification');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -53,6 +57,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin,finance_manager')->group(function () {
         Route::get('/audit-log', fn() => view('monitoring.audit-log'))->name('audit-log.index');
     });
+
+    // === Process Payment for a specific license (accessible to all authenticated users) ===
+    Route::get('/payments/process/{license}', [PaymentController::class, 'renew'])->name('payments.renew');
+
+    // === Midtrans Payment Gateway ===
+    Route::post('/midtrans/token', [MidtransController::class, 'getSnapToken'])->name('midtrans.token');
 
     // === Finance (restricted to finance roles) ===
     Route::middleware('role:finance_manager,finance_staff')->group(function () {

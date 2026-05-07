@@ -42,6 +42,16 @@ class PaymentController extends Controller
     }
 
     /**
+     * Show the renewal/payment page for a specific license.
+     */
+    public function renew(License $license): View
+    {
+        $license->load(['vendor', 'category']);
+
+        return view('finance.renew', compact('license'));
+    }
+
+    /**
      * Store a new payment request.
      */
     public function store(Request $request): RedirectResponse
@@ -50,7 +60,7 @@ class PaymentController extends Controller
             'license_id'     => ['required', 'exists:licenses,id'],
             'amount'         => ['required', 'numeric', 'min:1'],
             'payment_date'   => ['required', 'date'],
-            'payment_method' => ['nullable', 'in:transfer,credit_card,e_wallet,cash'],
+            'payment_method' => ['nullable', 'in:transfer,credit_card,e_wallet,cash,midtrans'],
             'notes'          => ['nullable', 'string', 'max:2000'],
         ], [
             'license_id.required'   => 'Lisensi wajib dipilih.',

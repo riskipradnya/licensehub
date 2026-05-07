@@ -69,7 +69,7 @@
                     @if($notif['level'] === 'danger' || $notif['level'] === 'warning')
                     <div class="flex gap-2 mt-3">
                         <a href="/licenses/1" class="btn btn-secondary text-xs py-1.5 px-3">View Detail</a>
-                        <a href="/payments/process/1" class="btn btn-primary text-xs py-1.5 px-3">Process Payment →</a>
+                        <a href="{{ route('payments.renew', 1) }}" class="btn btn-primary text-xs py-1.5 px-3">Process Payment →</a>
                     </div>
                     @endif
                 </div>

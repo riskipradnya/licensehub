@@ -91,6 +91,15 @@
                         <div class="flex justify-between"><span style="color: var(--color-text-secondary);">Status</span><x-status-badge status="active" size="sm" /></div>
                     </div>
                 </div>
+                @if($vendor->bank_name || $vendor->bank_account_number)
+                <div class="card">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider mb-3" style="color: var(--color-text-secondary);">Bank Info</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span style="color: var(--color-text-secondary);">Bank</span><span class="font-medium">{{ $vendor->bank_name ?? '—' }}</span></div>
+                        <div class="flex justify-between"><span style="color: var(--color-text-secondary);">No. Rek</span><span class="font-medium font-mono">{{ $vendor->bank_account_number ?? '—' }}</span></div>
+                    </div>
+                </div>
+                @endif
                 <div class="card">
                     <h3 class="text-sm font-semibold uppercase tracking-wider mb-3" style="color: var(--color-text-secondary);">Info</h3>
                     <div class="space-y-2 text-xs" style="color: var(--color-text-secondary);">
