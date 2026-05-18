@@ -65,7 +65,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">Bank Name</label>
-                        <input type="text" name="bank_name" class="form-input" placeholder="e.g. BCA, Mandiri, BNI" value="{{ old('bank_name') }}">
+                        <select name="bank_name" class="form-input">
+                            <option value="">— Pilih Bank —</option>
+                            @foreach(\App\Http\Controllers\XenditController::BANK_CODES as $code => $label)
+                                <option value="{{ $code }}" @selected(old('bank_name') === $code)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('bank_name') <p class="form-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="form-label">Account Number</label>

@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Vendor;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class VendorController extends Controller
@@ -54,6 +55,8 @@ class VendorController extends Controller
             'notes'          => ['nullable', 'string', 'max:2000'],
             'sla_response'   => ['nullable', 'in:24h,48h,72h'],
             'sla_hours'      => ['nullable', 'in:24/7,business'],
+            'bank_name'           => ['nullable', Rule::in(array_keys(XenditController::BANK_CODES))],
+            'bank_account_number' => ['nullable', 'string', 'max:50'],
         ], [
             'name.required' => 'Nama vendor wajib diisi.',
             'email.required' => 'Email support wajib diisi.',
@@ -116,6 +119,8 @@ class VendorController extends Controller
             'notes'          => ['nullable', 'string', 'max:2000'],
             'sla_response'   => ['nullable', 'in:24h,48h,72h'],
             'sla_hours'      => ['nullable', 'in:24/7,business'],
+            'bank_name'           => ['nullable', Rule::in(array_keys(XenditController::BANK_CODES))],
+            'bank_account_number' => ['nullable', 'string', 'max:50'],
         ], [
             'name.required' => 'Nama vendor wajib diisi.',
             'email.required' => 'Email support wajib diisi.',

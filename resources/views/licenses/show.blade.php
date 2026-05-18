@@ -41,7 +41,11 @@
                     <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">License Details</h3>
                     <div class="grid grid-cols-2 gap-y-4 gap-x-6">
                         <div><p class="text-xs mb-1" style="color: var(--color-text-secondary);">Vendor</p><p class="text-sm font-medium">
-                            <a href="{{ route('vendors.show', $license->vendor) }}" class="hover:underline" style="color: var(--color-primary);">{{ $license->vendor->name ?? '—' }}</a>
+                            @if($license->vendor)
+                                <a href="{{ route('vendors.show', $license->vendor) }}" class="hover:underline" style="color: var(--color-primary);">{{ $license->vendor->name }}</a>
+                            @else
+                                <span>—</span>
+                            @endif
                         </p></div>
                         <div><p class="text-xs mb-1" style="color: var(--color-text-secondary);">Category</p><p class="text-sm font-medium">{{ $license->category->name ?? '—' }}</p></div>
                         <div><p class="text-xs mb-1" style="color: var(--color-text-secondary);">License Type</p><p class="text-sm font-medium capitalize">{{ $license->type }}</p></div>

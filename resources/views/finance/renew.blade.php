@@ -5,11 +5,21 @@
         {{-- HEADER --}}
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">Process Payment</h2>
-                <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Perpanjangan lisensi perangkat lunak</p>
+                <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">Disbursement ke Vendor</h2>
+                <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Transfer pembayaran lisensi ke rekening vendor</p>
             </div>
             <a href="{{ route('licenses.show', $license) }}" class="btn btn-secondary text-sm">← Back to License</a>
         </div>
+
+        {{-- ERROR FLASH --}}
+        @if(session('error'))
+        <div class="card mb-6 p-4" style="border-left: 4px solid var(--color-status-danger); background: var(--color-status-danger-bg);">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 shrink-0" style="color: var(--color-status-danger);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                <p class="text-sm font-medium" style="color: var(--color-status-danger);">{{ session('error') }}</p>
+            </div>
+        </div>
+        @endif
 
         {{-- LICENSE SUMMARY CARD --}}
         <div class="card mb-6" style="border-left: 4px solid var(--color-primary);">
@@ -50,104 +60,90 @@
             </div>
         </div>
 
-        {{-- PAYMENT DETAILS --}}
+        {{-- DISBURSEMENT DETAILS --}}
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-            {{-- PAYMENT FORM (3/5) --}}
+            {{-- DISBURSEMENT FORM (3/5) --}}
             <div class="lg:col-span-3">
-                <div class="card">
-                    <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Payment Information</h3>
+                <form method="POST" action="{{ route('xendit.disburse') }}" class="card" id="disbursementForm">
+                    @csrf
+                    <input type="hidden" name="license_id" value="{{ $license->id }}">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Disbursement Information</h3>
 
-                    <form method="POST" action="{{ route('payments.store') }}" id="payment-form"
-                          x-data="paymentForm()" @submit.prevent="processPayment()">
-                        @csrf
-                        <input type="hidden" name="license_id" value="{{ $license->id }}">
-
-                        <div class="space-y-4">
-                            {{-- Amount --}}
-                            <div>
-                                <label class="form-label">Amount (Rp) <span style="color: var(--color-status-danger);">*</span></label>
-                                <input type="number" name="amount" class="form-input text-lg font-bold"
-                                       value="{{ (int) $license->cost }}" required min="1"
-                                       x-model="amount" @input="updateTotal()">
-                                <p class="text-xs mt-1" style="color: var(--color-text-secondary);">Biaya lisensi berdasarkan data terakhir</p>
+                    <div class="space-y-4">
+                        {{-- Vendor Bank Info --}}
+                        @if($license->vendor && $license->vendor->bank_name && $license->vendor->bank_account_number)
+                        <div class="p-4 rounded-xl" style="background: var(--color-status-info-bg); border: 1px solid var(--color-border);">
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg class="w-4 h-4" style="color: var(--color-status-info);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                <p class="text-xs font-semibold uppercase" style="color: var(--color-status-info);">Rekening Tujuan Vendor</p>
                             </div>
-
-                            {{-- Payment Date --}}
-                            <div>
-                                <label class="form-label">Payment Date <span style="color: var(--color-status-danger);">*</span></label>
-                                <input type="date" name="payment_date" class="form-input" value="{{ now()->format('Y-m-d') }}" required>
-                            </div>
-
-                            {{-- Payment Method --}}
-                            <div>
-                                <label class="form-label">Payment Method <span style="color: var(--color-status-danger);">*</span></label>
-                                <div class="grid grid-cols-2 gap-3 mt-2">
-                                    <label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition"
-                                           :class="method === 'midtrans' ? 'ring-2 ring-indigo-500' : ''"
-                                           style="background: var(--color-content-bg); border: 1px solid var(--color-border);">
-                                        <input type="radio" name="payment_method" value="midtrans" x-model="method" class="w-4 h-4">
-                                        <div>
-                                            <p class="text-sm font-medium">Midtrans</p>
-                                            <p class="text-[10px]" style="color: var(--color-text-secondary);">Payment Gateway</p>
-                                        </div>
-                                    </label>
-                                    <label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition"
-                                           :class="method === 'transfer' ? 'ring-2 ring-indigo-500' : ''"
-                                           style="background: var(--color-content-bg); border: 1px solid var(--color-border);">
-                                        <input type="radio" name="payment_method" value="transfer" x-model="method" class="w-4 h-4">
-                                        <div>
-                                            <p class="text-sm font-medium">Bank Transfer</p>
-                                            <p class="text-[10px]" style="color: var(--color-text-secondary);">BCA, Mandiri, BNI</p>
-                                        </div>
-                                    </label>
+                            <p class="text-sm font-semibold" style="color: var(--color-text-primary);">{{ \App\Http\Controllers\XenditController::BANK_CODES[$license->vendor->bank_name] ?? $license->vendor->bank_name }}</p>
+                            <p class="text-lg font-mono font-bold mt-1" style="color: var(--color-text-primary);">{{ $license->vendor->bank_account_number }}</p>
+                            <p class="text-xs mt-1" style="color: var(--color-text-secondary);">a.n. {{ $license->vendor->name }}</p>
+                        </div>
+                        @else
+                        <div class="p-4 rounded-xl" style="background: var(--color-status-danger-bg); border: 1px solid var(--color-status-danger);">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5" style="color: var(--color-status-danger);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                                <div>
+                                    <p class="text-sm font-semibold" style="color: var(--color-status-danger);">Rekening vendor belum diisi!</p>
+                                    <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">Silakan update data bank vendor terlebih dahulu.</p>
                                 </div>
                             </div>
-
-                            {{-- Bank Info (shown for bank transfer) --}}
-                            @if($license->vendor->bank_name)
-                            <div x-show="method === 'transfer'" x-transition class="p-3 rounded-lg" style="background: var(--color-status-info-bg); border: 1px solid var(--color-border);">
-                                <p class="text-xs font-semibold uppercase mb-1" style="color: var(--color-status-info);">Vendor Bank Account</p>
-                                <p class="text-sm font-medium">{{ $license->vendor->bank_name }}</p>
-                                <p class="text-sm font-mono font-bold" style="color: var(--color-text-primary);">{{ $license->vendor->bank_account_number }}</p>
-                                <p class="text-xs mt-1" style="color: var(--color-text-secondary);">a.n. {{ $license->vendor->name }}</p>
-                            </div>
+                            @if($license->vendor)
+                                <a href="{{ route('vendors.edit', $license->vendor) }}" class="btn btn-secondary text-xs mt-3">✏️ Edit Vendor</a>
+                            @else
+                                <p class="text-xs text-red-500 mt-2">Lisensi ini tidak terhubung dengan vendor apapun.</p>
                             @endif
+                        </div>
+                        @endif
 
-                            {{-- Reference Number --}}
-                            <div x-show="method === 'transfer'" x-transition>
-                                <label class="form-label">Reference Number</label>
-                                <input type="text" name="reference_number" class="form-input font-mono" placeholder="e.g. TRF-20260507-001">
+                        {{-- Amount --}}
+                        <div>
+                            <label class="form-label">Jumlah Transfer (Rp) <span style="color: var(--color-status-danger);">*</span></label>
+                            <input type="number" name="amount" class="form-input text-lg font-bold"
+                                   value="{{ old('amount', (int) $license->cost) }}" required min="1">
+                            <p class="text-xs mt-1" style="color: var(--color-text-secondary);">Biaya lisensi berdasarkan data terakhir</p>
+                        </div>
+
+                        {{-- Notes --}}
+                        <div>
+                            <label class="form-label">Catatan</label>
+                            <textarea name="notes" class="form-input" rows="2" placeholder="Catatan disbursement...">{{ old('notes', 'Pembayaran perpanjangan ' . $license->name) }}</textarea>
+                        </div>
+
+                        {{-- Method Info --}}
+                        <div class="p-3 rounded-lg flex items-center gap-3" style="background: var(--color-content-bg); border: 1px solid var(--color-border);">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style="background: var(--color-primary-50);">
+                                <svg class="w-5 h-5" style="color: var(--color-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                             </div>
-
-                            {{-- Notes --}}
                             <div>
-                                <label class="form-label">Notes</label>
-                                <textarea name="notes" class="form-input" rows="2" placeholder="Catatan pembayaran...">Perpanjangan {{ $license->name }}</textarea>
+                                <p class="text-sm font-semibold">Xendit — Disbursement API</p>
+                                <p class="text-[10px]" style="color: var(--color-text-secondary);">Dana akan ditransfer langsung ke rekening vendor via Xendit Payout</p>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="mt-6 pt-4" style="border-top: 1px solid var(--color-border);">
-                            {{-- Midtrans Pay Button --}}
-                            <button type="button" x-show="method === 'midtrans'" x-transition
-                                    @click="payWithMidtrans()"
-                                    class="btn btn-primary w-full text-base py-3" :disabled="processing">
-                                <span x-text="processing ? '⏳ Processing...' : '💳 Pay with Midtrans — Rp ' + formatRupiah(amount)"></span>
-                            </button>
-                            {{-- Manual Submit Button --}}
-                            <button type="submit" x-show="method === 'transfer'" x-transition
-                                    class="btn btn-primary w-full text-base py-3" :disabled="processing">
-                                <span x-text="processing ? '⏳ Submitting...' : '📤 Submit Payment Request — Rp ' + formatRupiah(amount)"></span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    {{-- Action Buttons --}}
+                    <div class="mt-6 pt-4" style="border-top: 1px solid var(--color-border);">
+                        @if($license->vendor && $license->vendor->bank_name && $license->vendor->bank_account_number)
+                        <button type="button" class="btn btn-primary w-full text-base py-3" id="btnTransfer" onclick="prosesTransfer()">
+                            🏦 Transfer ke Vendor — Xendit
+                        </button>
+                        @else
+                        <button type="button" class="btn btn-secondary w-full text-base py-3 opacity-50 cursor-not-allowed" disabled>
+                            🏦 Rekening vendor belum tersedia
+                        </button>
+                        @endif
+                    </div>
+                </form>
             </div>
 
             {{-- ORDER SUMMARY SIDEBAR (2/5) --}}
             <div class="lg:col-span-2 space-y-4">
                 <div class="card">
-                    <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Order Summary</h3>
+                    <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Detail Pembayaran</h3>
                     <div class="space-y-3 text-sm">
                         <div class="flex justify-between">
                             <span style="color: var(--color-text-secondary);">License</span>
@@ -155,7 +151,15 @@
                         </div>
                         <div class="flex justify-between">
                             <span style="color: var(--color-text-secondary);">Vendor</span>
-                            <span class="font-medium">{{ $license->vendor->name ?? '—' }}</span>
+                            <span class="font-medium">{{ optional($license->vendor)->name ?? '—' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span style="color: var(--color-text-secondary);">Bank</span>
+                            <span class="font-medium">{{ optional($license->vendor)->bank_name ?? '—' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span style="color: var(--color-text-secondary);">No. Rekening</span>
+                            <span class="font-mono font-medium">{{ optional($license->vendor)->bank_account_number ?? '—' }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span style="color: var(--color-text-secondary);">Billing Cycle</span>
@@ -168,22 +172,37 @@
                         </div>
                         @endif
                         <hr style="border-color: var(--color-border);">
-                        <div class="flex justify-between">
-                            <span style="color: var(--color-text-secondary);">Subtotal</span>
-                            <span class="font-semibold">{{ $license->formatted_cost }}</span>
-                        </div>
                         <div class="flex justify-between text-lg pt-2" style="border-top: 1px solid var(--color-border);">
-                            <span class="font-bold">Total</span>
-                            <span class="font-bold" style="color: var(--color-primary);" x-data x-text="'Rp ' + paymentForm().formatRupiah({{ (int) $license->cost }})">{{ $license->formatted_cost }}</span>
+                            <span class="font-bold">Total Transfer</span>
+                            <span class="font-bold" style="color: var(--color-primary);">{{ $license->formatted_cost }}</span>
                         </div>
                     </div>
                 </div>
 
-                {{-- Security Notice --}}
+                {{-- Xendit Info --}}
                 <div class="card text-center">
                     <svg class="w-8 h-8 mx-auto mb-2" style="color: var(--color-status-active);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    <p class="text-xs font-medium" style="color: var(--color-text-primary);">Pembayaran Aman</p>
-                    <p class="text-[10px] mt-1" style="color: var(--color-text-secondary);">Diproses melalui Midtrans Payment Gateway yang tersertifikasi PCI-DSS</p>
+                    <p class="text-xs font-medium" style="color: var(--color-text-primary);">Transfer Aman</p>
+                    <p class="text-[10px] mt-1" style="color: var(--color-text-secondary);">Diproses melalui Xendit Disbursement API yang tersertifikasi PCI-DSS</p>
+                </div>
+
+                {{-- Disbursement Flow Info --}}
+                <div class="card">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider mb-3" style="color: var(--color-text-secondary);">Alur Disbursement</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-2">
+                            <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5" style="background: var(--color-primary); color: white;">1</div>
+                            <p class="text-xs" style="color: var(--color-text-secondary);">Klik <strong>"Transfer ke Vendor"</strong> untuk mengirim request disbursement ke Xendit</p>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5" style="background: var(--color-primary); color: white;">2</div>
+                            <p class="text-xs" style="color: var(--color-text-secondary);">Xendit memproses transfer ke rekening vendor</p>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5" style="background: var(--color-primary); color: white;">3</div>
+                            <p class="text-xs" style="color: var(--color-text-secondary);">Status otomatis di-update via callback: <strong>PENDING → COMPLETED</strong></p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -204,74 +223,18 @@
     @endpush
     @endif
 
-    {{-- Midtrans Snap JS --}}
     @push('scripts')
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
     <script>
-        function paymentForm() {
-            return {
-                method: 'midtrans',
-                amount: {{ (int) $license->cost }},
-                processing: false,
+        function prosesTransfer() {
+            if (confirm('Apakah Anda yakin ingin mentransfer dana ke vendor ini via Xendit?')) {
+                // Ubah state tombol agar tidak diklik dua kali
+                let btn = document.getElementById('btnTransfer');
+                btn.disabled = true;
+                btn.innerText = '\u23f3 Sedang memproses...';
 
-                formatRupiah(num) {
-                    return new Intl.NumberFormat('id-ID').format(num);
-                },
-
-                updateTotal() {
-                    // Could add tax logic here
-                },
-
-                async payWithMidtrans() {
-                    this.processing = true;
-                    try {
-                        const response = await fetch('{{ route("midtrans.token") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            },
-                            body: JSON.stringify({
-                                license_id: {{ $license->id }},
-                                amount: this.amount,
-                            }),
-                        });
-
-                        const data = await response.json();
-
-                        if (data.snap_token) {
-                            window.snap.pay(data.snap_token, {
-                                onSuccess: (result) => {
-                                    window.location.href = '{{ route("payments.index") }}?success=1';
-                                },
-                                onPending: (result) => {
-                                    window.location.href = '{{ route("payments.index") }}?pending=1';
-                                },
-                                onError: (result) => {
-                                    alert('Payment gagal. Silakan coba lagi.');
-                                    this.processing = false;
-                                },
-                                onClose: () => {
-                                    this.processing = false;
-                                },
-                            });
-                        } else {
-                            alert(data.error || 'Gagal mendapatkan token pembayaran.');
-                            this.processing = false;
-                        }
-                    } catch (err) {
-                        alert('Terjadi kesalahan. Silakan coba lagi.');
-                        this.processing = false;
-                    }
-                },
-
-                processPayment() {
-                    if (this.method === 'transfer') {
-                        this.processing = true;
-                        this.$el.submit();
-                    }
-                }
-            };
+                // Submit form secara manual
+                document.getElementById('disbursementForm').submit();
+            }
         }
     </script>
     @endpush

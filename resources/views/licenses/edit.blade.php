@@ -104,27 +104,28 @@
                 <textarea id="notes" name="notes" rows="3" class="form-input">{{ old('notes', $license->notes) }}</textarea>
             </div>
 
-            {{-- Actions --}}
-            <div class="flex items-center justify-between">
-                <div x-data="{ confirmDelete: false }">
-                    <button type="button" class="btn btn-danger text-sm" x-show="!confirmDelete" @click="confirmDelete = true">🗑 Delete License</button>
-                    <div x-show="confirmDelete" class="flex items-center gap-2" x-transition>
-                        <span class="text-sm" style="color: var(--color-status-danger);">Yakin hapus?</span>
-                        <form method="POST" action="{{ route('licenses.destroy', $license) }}" class="inline">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-danger text-sm">Ya, Hapus</button>
-                        </form>
-                        <button type="button" class="btn btn-secondary text-sm" @click="confirmDelete = false">Batal</button>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <a href="{{ route('licenses.show', $license) }}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary" :disabled="loading">
-                        <span x-text="loading ? 'Saving...' : '💾 Update License'">💾 Update License</span>
-                    </button>
+        </form>
+
+        {{-- Actions --}}
+        <div class="flex items-center justify-between">
+            <div x-data="{ confirmDelete: false }">
+                <button type="button" class="btn btn-danger text-sm" x-show="!confirmDelete" @click="confirmDelete = true">🗑 Delete License</button>
+                <div x-show="confirmDelete" class="flex items-center gap-2" x-transition>
+                    <span class="text-sm" style="color: var(--color-status-danger);">Yakin hapus?</span>
+                    <form method="POST" action="{{ route('licenses.destroy', $license) }}" class="inline">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-danger text-sm">Ya, Hapus</button>
+                    </form>
+                    <button type="button" class="btn btn-secondary text-sm" @click="confirmDelete = false">Batal</button>
                 </div>
             </div>
-        </form>
+            <div class="flex gap-3">
+                <a href="{{ route('licenses.show', $license) }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" form="edit-license-form" class="btn btn-primary" :disabled="loading">
+                    <span x-text="loading ? 'Saving...' : '💾 Update License'">💾 Update License</span>
+                </button>
+            </div>
+        </div>
     </div>
 
 </x-app-layout>

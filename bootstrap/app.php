@@ -15,9 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
 
-        // Exempt Midtrans webhook from CSRF verification
+        // Exempt Xendit webhook callback from CSRF verification
         $middleware->validateCsrfTokens(except: [
-            'midtrans/notification',
+            'xendit/callback',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

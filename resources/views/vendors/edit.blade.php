@@ -65,7 +65,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">Bank Name</label>
-                        <input type="text" name="bank_name" class="form-input" placeholder="e.g. BCA, Mandiri, BNI" value="{{ old('bank_name', $vendor->bank_name) }}">
+                        <select name="bank_name" class="form-input">
+                            <option value="">— Pilih Bank —</option>
+                            @foreach(\App\Http\Controllers\XenditController::BANK_CODES as $code => $label)
+                                <option value="{{ $code }}" @selected(old('bank_name', $vendor->bank_name) === $code)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('bank_name') <p class="form-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="form-label">Account Number</label>
@@ -77,23 +83,23 @@
                 <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Notes</h3>
                 <textarea name="notes" rows="3" class="form-input">{{ old('notes', $vendor->notes) }}</textarea>
             </div>
-            <div class="flex items-center justify-between">
-                <div x-data="{ confirmDelete: false }">
-                    <button type="button" class="btn btn-danger text-sm" x-show="!confirmDelete" @click="confirmDelete = true">🗑 Delete Vendor</button>
-                    <div x-show="confirmDelete" class="flex items-center gap-2" x-transition>
-                        <span class="text-sm" style="color: var(--color-status-danger);">Yakin hapus?</span>
-                        <form method="POST" action="{{ route('vendors.destroy', $vendor) }}" class="inline">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-danger text-sm">Ya, Hapus</button>
-                        </form>
-                        <button type="button" class="btn btn-secondary text-sm" @click="confirmDelete = false">Batal</button>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <a href="{{ route('vendors.show', $vendor) }}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary" :disabled="loading"><span x-text="loading ? 'Saving...' : '💾 Update Vendor'">💾 Update Vendor</span></button>
+        </form>
+        <div class="flex items-center justify-between">
+            <div x-data="{ confirmDelete: false }">
+                <button type="button" class="btn btn-danger text-sm" x-show="!confirmDelete" @click="confirmDelete = true">🗑 Delete Vendor</button>
+                <div x-show="confirmDelete" class="flex items-center gap-2" x-transition>
+                    <span class="text-sm" style="color: var(--color-status-danger);">Yakin hapus?</span>
+                    <form method="POST" action="{{ route('vendors.destroy', $vendor) }}" class="inline">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-danger text-sm">Ya, Hapus</button>
+                    </form>
+                    <button type="button" class="btn btn-secondary text-sm" @click="confirmDelete = false">Batal</button>
                 </div>
             </div>
-        </form>
+            <div class="flex gap-3">
+                <a href="{{ route('vendors.show', $vendor) }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" form="edit-vendor-form" class="btn btn-primary" :disabled="loading"><span x-text="loading ? 'Saving...' : '💾 Update Vendor'">💾 Update Vendor</span></button>
+            </div>
+        </div>
     </div>
 </x-app-layout>

@@ -16,29 +16,19 @@ class PaymentController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Payment::with(['license.vendor', 'creator', 'approver'])
-            ->latest('payment_date');
+        // Tampilkan daftar lisensi yang butuh pembayaran (expiring/expired),
+        // kecuali yang sudah memiliki transaksi aktif (pending = sedang diproses,
+        // paid = sudah lunas) agar user tidak melakukan double payment.
+        $licenses = License::with(['vendor', 'category'])
+            ->whereIn('status', ['expiring', 'expired'])
+            ->whereDoesntHave('payments', function ($query) {
+                $query->whereIn('status', ['pending', 'paid']);
+            })
+            ->orderByRaw("FIELD(status, 'expired', 'expiring')")
+            ->orderBy('expiry_date')
+            ->paginate(15);
 
-        // Status filter
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
-
-        $payments = $query->paginate(15)->withQueryString();
-
-        // Summary stats
-        $pendingCount  = Payment::where('status', 'pending')->count();
-        $pendingAmount = (float) Payment::where('status', 'pending')->sum('amount');
-        $approvedCount = Payment::where('status', 'approved')->count();
-        $paidTotal     = (float) Payment::where('status', 'paid')->sum('amount');
-
-        // Licenses for creating new payment
-        $licenses = License::with('vendor')->orderBy('name')->get();
-
-        return view('finance.payments', compact(
-            'payments', 'pendingCount', 'pendingAmount',
-            'approvedCount', 'paidTotal', 'licenses',
-        ));
+        return view('finance.payments', compact('licenses'));
     }
 
     /**
@@ -60,7 +50,7 @@ class PaymentController extends Controller
             'license_id'     => ['required', 'exists:licenses,id'],
             'amount'         => ['required', 'numeric', 'min:1'],
             'payment_date'   => ['required', 'date'],
-            'payment_method' => ['nullable', 'in:transfer,credit_card,e_wallet,cash,midtrans'],
+            'payment_method' => ['nullable', 'in:transfer,credit_card,e_wallet,cash,transfer'],
             'notes'          => ['nullable', 'string', 'max:2000'],
         ], [
             'license_id.required'   => 'Lisensi wajib dipilih.',

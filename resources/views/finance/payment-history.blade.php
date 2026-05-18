@@ -37,7 +37,7 @@
                     @forelse($payments as $pay)
                     <tr>
                         <td class="font-mono text-xs font-medium" style="color: var(--color-primary);">{{ $pay->reference_number ?? '—' }}</td>
-                        <td class="font-medium">{{ $pay->license->name }}</td>
+                        <td class="font-medium">{{ $pay->license?->name ?? '—' }}</td>
                         <td class="font-semibold">Rp {{ number_format((float)$pay->amount, 0, ',', '.') }}</td>
                         <td><span class="text-xs capitalize">{{ str_replace('_', ' ', $pay->payment_method ?? '—') }}</span></td>
                         <td>{{ $pay->payment_date->format('d M Y') }}</td>

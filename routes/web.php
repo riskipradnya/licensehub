@@ -5,9 +5,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LicenseController;
-use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\XenditController;
 use Illuminate\Support\Facades\Route;
 
 // ══════════════════════════════════════════════════════════════
@@ -16,9 +16,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect('/login'));
 
-// Midtrans notification webhook (no auth — called server-to-server by Midtrans)
-Route::post('/midtrans/notification', [MidtransController::class, 'handleNotification'])->name('midtrans.notification');
-
+// Xendit Disbursement webhook (no auth — called server-to-server by Xendit)
+Route::post('/xendit/callback', [XenditController::class, 'handleCallback'])->name('xendit.callback');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -61,9 +60,8 @@ Route::middleware('auth')->group(function () {
     // === Process Payment for a specific license (accessible to all authenticated users) ===
     Route::get('/payments/process/{license}', [PaymentController::class, 'renew'])->name('payments.renew');
 
-    // === Midtrans Payment Gateway ===
-    Route::post('/midtrans/token', [MidtransController::class, 'getSnapToken'])->name('midtrans.token');
-
+    // === Xendit Disbursement ===
+    Route::post('/xendit/disburse', [XenditController::class, 'createDisbursement'])->name('xendit.disburse');
     // === Finance (restricted to finance roles) ===
     Route::middleware('role:finance_manager,finance_staff')->group(function () {
         // Payments
@@ -73,6 +71,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
         Route::post('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.markPaid');
         Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+
+
 
         // Invoices
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
