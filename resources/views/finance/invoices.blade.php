@@ -20,19 +20,36 @@
 
     {{-- FILTER --}}
     <div class="card mb-6">
-        <form method="GET" action="{{ route('invoices.index') }}" class="flex flex-col md:flex-row gap-3">
-            <div class="relative flex-1">
+        <form method="GET" action="{{ route('invoices.index') }}" class="grid grid-cols-1 md:grid-cols-12 gap-4 w-full">
+            <div class="relative md:col-span-6">
                 <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--color-text-secondary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari invoice..." class="form-input pl-10">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari invoice/vendor..." class="form-input pl-10 w-full">
             </div>
-            <select name="status" class="form-input w-full md:w-40" onchange="this.form.submit()">
-                <option value="">All Status</option>
-                <option value="draft" @selected(request('status') === 'draft')>Draft</option>
-                <option value="sent" @selected(request('status') === 'sent')>Sent</option>
-                <option value="paid" @selected(request('status') === 'paid')>Paid</option>
-                <option value="overdue" @selected(request('status') === 'overdue')>Overdue</option>
-                <option value="cancelled" @selected(request('status') === 'cancelled')>Cancelled</option>
-            </select>
+            <div class="md:col-span-2">
+                <select name="vendor_id" class="form-input w-full" onchange="this.form.submit()">
+                    <option value="">All Vendors</option>
+                    @foreach($vendors as $vendor)
+                        <option value="{{ $vendor->id }}" @selected(request('vendor_id') == $vendor->id)>{{ $vendor->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <select name="status" class="form-input w-full" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="draft" @selected(request('status') === 'draft')>Draft</option>
+                    <option value="unpaid" @selected(request('status') === 'unpaid')>Unpaid</option>
+                    <option value="paid" @selected(request('status') === 'paid')>Paid</option>
+                    <option value="cancelled" @selected(request('status') === 'cancelled')>Cancelled</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <select name="year" class="form-input w-full" onchange="this.form.submit()">
+                    <option value="">All Years</option>
+                    @foreach($years as $yr)
+                        <option value="{{ $yr }}" @selected(request('year') == $yr)>{{ $yr }}</option>
+                    @endforeach
+                </select>
+            </div>
         </form>
     </div>
 
@@ -59,6 +76,13 @@
                         <td><x-status-badge :status="$inv->status === 'sent' ? 'expiring' : ($inv->status === 'overdue' ? 'expired' : $inv->status)" :label="ucfirst($inv->status)" size="sm" /></td>
                         <td class="text-center">
                             <div class="flex items-center justify-center gap-1" x-data="{ showStatus: false }">
+                                {{-- Download File --}}
+                                @if($inv->file_path)
+                                <a href="{{ \Illuminate\Support\Facades\Storage::url($inv->file_path) }}" target="_blank" class="btn-ghost p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50" title="Download Invoice File">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                </a>
+                                @endif
+                                
                                 {{-- Status Change --}}
                                 <div class="relative">
                                     <button @click="showStatus = !showStatus" class="btn-ghost p-1.5 rounded-lg" title="Change Status">
@@ -106,12 +130,23 @@
 
     {{-- CREATE INVOICE MODAL --}}
     <x-modal id="create-invoice" title="Create Invoice" maxWidth="md">
-        <form method="POST" action="{{ route('invoices.store') }}" id="create-invoice-form">
+        <form method="POST" action="{{ route('invoices.store') }}" id="create-invoice-form" enctype="multipart/form-data" x-data="{
+            licenses: {{ $licenses->toJson() }},
+            selectedLicenseId: '',
+            amount: '',
+            dueDate: '{{ now()->addDays(14)->format('Y-m-d') }}',
+            updateFields() {
+                const license = this.licenses.find(l => l.id == this.selectedLicenseId);
+                if (license) {
+                    this.amount = parseFloat(license.cost) || 0;
+                }
+            }
+        }">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="md:col-span-2">
                     <label class="form-label">Related License <span style="color: var(--color-status-danger);">*</span></label>
-                    <select name="license_id" class="form-input" required>
+                    <select name="license_id" class="form-input" required x-model="selectedLicenseId" @change="updateFields">
                         <option value="" disabled selected>Pilih Lisensi...</option>
                         @foreach($licenses as $license)
                             <option value="{{ $license->id }}">{{ $license->name }} — {{ $license->vendor->name ?? '' }}</option>
@@ -124,13 +159,21 @@
                 </div>
                 <div>
                     <label class="form-label">Due Date <span style="color: var(--color-status-danger);">*</span></label>
-                    <input type="date" name="due_date" class="form-input" value="{{ now()->addDays(14)->format('Y-m-d') }}" required>
+                    <input type="date" name="due_date" class="form-input" x-model="dueDate" required>
                 </div>
-                <div>
+                <div class="md:col-span-2">
                     <label class="form-label">Amount (Rp) <span style="color: var(--color-status-danger);">*</span></label>
-                    <input type="number" name="amount" class="form-input" placeholder="0" required min="1">
+                    <input type="number" name="amount" class="form-input" placeholder="0" required min="1" x-model="amount">
+                    <label class="inline-flex items-center mt-2 cursor-pointer">
+                        <input type="checkbox" name="update_master_price" value="1" class="form-checkbox text-primary h-4 w-4 border-gray-300 rounded">
+                        <span class="ml-2 text-xs" style="color: var(--color-text-secondary);">Update harga master lisensi dengan nominal tagihan baru ini</span>
+                    </label>
                 </div>
-                <div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Vendor Invoice File (PDF/Image, max 10MB)</label>
+                    <input type="file" name="vendor_invoice_file" class="form-input text-sm" accept=".pdf,.jpg,.jpeg,.png">
+                </div>
+                <div class="md:col-span-2">
                     <label class="form-label">Tax (Rp)</label>
                     <input type="number" name="tax_amount" class="form-input" placeholder="0" min="0" value="0">
                 </div>

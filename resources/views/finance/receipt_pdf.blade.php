@@ -64,7 +64,7 @@
         <table class="header-table">
             <tr>
                 <td style="width: 60%;">
-                    <p class="company-name">PT. Nama Perusahaan Anda</p>
+                    <p class="company-name">Radisson Blu Resort & Villas, Bali Uluwatu</p>
                     <p class="company-info">NPWP: 01.234.567.8-901.000</p>
                     <p class="company-info">Jl. Contoh Alamat No. 123, Bali</p>
                     <p class="company-info">finance@perusahaan.com | +62 812-3456-7890</p>

@@ -17,11 +17,24 @@ class InvoiceController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Invoice::with(['license', 'vendor', 'payment', 'creator'])->latest();
+        $query = Invoice::with(['license', 'vendor', 'payment', 'creator']);
 
         if ($status = $request->input('status')) {
-            $query->where('status', $status);
+            if ($status === 'unpaid') {
+                $query->unpaid();
+            } else {
+                $query->where('status', $status);
+            }
         }
+        
+        if ($vendorId = $request->input('vendor_id')) {
+            $query->where('vendor_id', $vendorId);
+        }
+
+        if ($year = $request->input('year')) {
+            $query->whereYear('invoice_date', $year);
+        }
+
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('invoice_number', 'like', "%{$search}%")
@@ -29,6 +42,9 @@ class InvoiceController extends Controller
                   ->orWhereHas('vendor', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
+
+        // Urutkan berdasarkan tanggal jatuh tempo terdekat
+        $query->orderBy('due_date', 'asc');
 
         $invoices = $query->paginate(15)->withQueryString();
 
@@ -40,13 +56,16 @@ class InvoiceController extends Controller
             ->whereYear('updated_at', now()->year)
             ->sum('total_amount');
 
-        // Dropdowns for create modal
+        // Dropdowns for create modal & filters
         $licenses = License::with('vendor')->orderBy('name')->get();
         $vendors  = Vendor::active()->ordered()->get();
+        
+        // Mengambil daftar tahun yang ada dari data invoice
+        $years = Invoice::selectRaw('YEAR(invoice_date) as year')->distinct()->pluck('year')->filter()->sortDesc();
 
         return view('finance.invoices', compact(
             'invoices', 'totalInvoices', 'unpaidAmount', 'paidThisMonth',
-            'licenses', 'vendors',
+            'licenses', 'vendors', 'years'
         ));
     }
 
@@ -56,12 +75,14 @@ class InvoiceController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'license_id'   => ['required', 'exists:licenses,id'],
-            'amount'       => ['required', 'numeric', 'min:1'],
-            'tax_amount'   => ['nullable', 'numeric', 'min:0'],
-            'invoice_date' => ['required', 'date'],
-            'due_date'     => ['required', 'date', 'after_or_equal:invoice_date'],
-            'notes'        => ['nullable', 'string', 'max:2000'],
+            'license_id'          => ['required', 'exists:licenses,id'],
+            'amount'              => ['required', 'numeric', 'min:1'],
+            'tax_amount'          => ['nullable', 'numeric', 'min:0'],
+            'invoice_date'        => ['required', 'date'],
+            'due_date'            => ['required', 'date', 'after_or_equal:invoice_date'],
+            'notes'               => ['nullable', 'string', 'max:2000'],
+            'vendor_invoice_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'update_master_price' => ['nullable', 'boolean'],
         ], [
             'license_id.required'        => 'Lisensi wajib dipilih.',
             'amount.required'            => 'Jumlah invoice wajib diisi.',
@@ -73,6 +94,11 @@ class InvoiceController extends Controller
         $license = License::with('vendor')->findOrFail($validated['license_id']);
         $taxAmount = $validated['tax_amount'] ?? 0;
 
+        $filePath = null;
+        if ($request->hasFile('vendor_invoice_file')) {
+            $filePath = $request->file('vendor_invoice_file')->store('invoices/docs', 'public');
+        }
+
         $invoice = Invoice::create([
             'invoice_number' => Invoice::generateInvoiceNumber(),
             'license_id'     => $validated['license_id'],
@@ -83,9 +109,15 @@ class InvoiceController extends Controller
             'invoice_date'   => $validated['invoice_date'],
             'due_date'       => $validated['due_date'],
             'status'         => 'draft',
+            'file_path'      => $filePath,
             'notes'          => $validated['notes'] ?? null,
             'created_by'     => auth()->id(),
         ]);
+
+        if (!empty($validated['update_master_price'])) {
+            $license->update(['cost' => $validated['amount']]);
+            AuditLog::log('updated', 'License', $license->id, ['cost' => $license->cost], ['cost' => $validated['amount'], 'reason' => 'Auto-updated from invoice']);
+        }
 
         AuditLog::log('created', 'Invoice', $invoice->id, null, [
             'invoice_number' => $invoice->invoice_number,
