@@ -6,8 +6,10 @@ use App\Models\AuditLog;
 use App\Models\Category;
 use App\Models\License;
 use App\Models\Vendor;
+use App\Models\Document;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class LicenseController extends Controller
@@ -58,6 +60,9 @@ class LicenseController extends Controller
             'cost'          => ['required', 'numeric', 'min:0'],
             'billing_cycle' => ['required', 'in:monthly,quarterly,yearly,one_time'],
             'notes'         => ['nullable', 'string', 'max:5000'],
+            'documents'        => ['nullable', 'array'],
+            'documents.*.file' => ['required_with:documents', 'file', 'mimes:pdf,docx,zip,png,jpg,jpeg', 'max:10240'],
+            'documents.*.type' => ['required_with:documents', 'in:contract,invoice,certificate,quotation,other'],
         ], [
             'name.required'             => 'Nama lisensi wajib diisi.',
             'vendor_id.required'        => 'Vendor wajib dipilih.',
@@ -81,6 +86,26 @@ class LicenseController extends Controller
         );
 
         $license = License::create($validated);
+
+        // Handle Documents Upload
+        if ($request->has('documents')) {
+            foreach ($request->file('documents') as $index => $docData) {
+                if (isset($docData['file']) && $docData['file']->isValid()) {
+                    $file = $docData['file'];
+                    $type = $request->input("documents.{$index}.type") ?? 'other';
+                    $path = $file->store('licenses/documents', 'public');
+                    
+                    Document::create([
+                        'license_id'    => $license->id,
+                        'uploaded_by'   => auth()->id(),
+                        'file_name'     => $file->getClientOriginalName(),
+                        'file_path'     => $path,
+                        'file_size'     => $file->getSize(),
+                        'document_type' => $type,
+                    ]);
+                }
+            }
+        }
 
         AuditLog::log('created', 'License', $license->id, null, $validated);
 
@@ -141,6 +166,9 @@ class LicenseController extends Controller
             'cost'          => ['required', 'numeric', 'min:0'],
             'billing_cycle' => ['required', 'in:monthly,quarterly,yearly,one_time'],
             'notes'         => ['nullable', 'string', 'max:5000'],
+            'documents'        => ['nullable', 'array'],
+            'documents.*.file' => ['required_with:documents', 'file', 'mimes:pdf,docx,zip,png,jpg,jpeg', 'max:10240'],
+            'documents.*.type' => ['required_with:documents', 'in:contract,invoice,certificate,quotation,other'],
         ], [
             'name.required'             => 'Nama lisensi wajib diisi.',
             'vendor_id.required'        => 'Vendor wajib dipilih.',
@@ -150,7 +178,10 @@ class LicenseController extends Controller
             'cost.required'             => 'Biaya lisensi wajib diisi.',
         ]);
 
-        // Auto-compute status
+        // Hitung status berdasarkan expiry_date yang akan disimpan.
+        // computeStatus() menghitung murni dari tanggal — jika expiry_date
+        // di masa depan (>30 hari), hasilnya selalu 'active'.
+        // Ini aman karena renewLicense() sudah menulis expiry_date yang benar ke DB.
         $validated['status'] = $this->computeStatus(
             $validated['type'],
             $validated['expiry_date'] ?? null
@@ -159,6 +190,26 @@ class LicenseController extends Controller
         $oldValues = $license->only(array_keys($validated));
 
         $license->update($validated);
+
+        // Handle Documents Upload
+        if ($request->has('documents')) {
+            foreach ($request->file('documents') as $index => $docData) {
+                if (isset($docData['file']) && $docData['file']->isValid()) {
+                    $file = $docData['file'];
+                    $type = $request->input("documents.{$index}.type") ?? 'other';
+                    $path = $file->store('licenses/documents', 'public');
+                    
+                    Document::create([
+                        'license_id'    => $license->id,
+                        'uploaded_by'   => auth()->id(),
+                        'file_name'     => $file->getClientOriginalName(),
+                        'file_path'     => $path,
+                        'file_size'     => $file->getSize(),
+                        'document_type' => $type,
+                    ]);
+                }
+            }
+        }
 
         AuditLog::log('updated', 'License', $license->id, $oldValues, $validated);
 
@@ -184,6 +235,11 @@ class LicenseController extends Controller
 
     /**
      * Auto-compute status based on type and expiry date.
+     *
+     * Selalu menghitung berdasarkan expiry_date yang akan disimpan,
+     * bukan status lama — sehingga form edit selalu konsisten dengan data DB.
+     * Jika lisensi baru saja diperpanjang (expiry_date jauh di masa depan),
+     * status akan otomatis dihitung 'active' dari perhitungan hari.
      */
     private function computeStatus(string $type, ?string $expiryDate): string
     {
@@ -195,7 +251,7 @@ class LicenseController extends Controller
             return 'active';
         }
 
-        $expiry = \Carbon\Carbon::parse($expiryDate);
+        $expiry   = \Carbon\Carbon::parse($expiryDate);
         $daysLeft = (int) now()->diffInDays($expiry, false);
 
         if ($daysLeft <= 0) {

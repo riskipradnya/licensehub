@@ -4,7 +4,7 @@
             <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">Add New Vendor</h2>
             <a href="{{ route('vendors.index') }}" class="btn btn-secondary text-sm">← Back</a>
         </div>
-        <form method="POST" action="{{ route('vendors.store') }}" x-data="{ loading: false }" @submit="loading = true" id="create-vendor-form">
+        <form method="POST" action="{{ route('vendors.store') }}" enctype="multipart/form-data" x-data="{ loading: false }" @submit="loading = true" id="create-vendor-form">
             @csrf
             <div class="card mb-6">
                 <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Vendor Information</h3>
@@ -82,6 +82,29 @@
             <div class="card mb-6">
                 <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Notes</h3>
                 <textarea name="notes" rows="3" class="form-input" placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
+            </div>
+            <div class="card mb-6">
+                <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Vendor Documents</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="form-label">Vendor Logo (Image)</label>
+                        <input type="file" name="logo" accept="image/*" class="form-input @error('logo') border-red-500 @enderror">
+                        @error('logo') <p class="form-error">{{ $message }}</p> @enderror
+                        <p class="text-xs mt-1" style="color: var(--color-text-secondary);">Max 2MB. Format: JPG, PNG.</p>
+                    </div>
+                    <div>
+                        <label class="form-label">MSA File (PDF)</label>
+                        <input type="file" name="msa_file" accept=".pdf" class="form-input @error('msa_file') border-red-500 @enderror">
+                        @error('msa_file') <p class="form-error">{{ $message }}</p> @enderror
+                        <p class="text-xs mt-1" style="color: var(--color-text-secondary);">Max 10MB.</p>
+                    </div>
+                    <div>
+                        <label class="form-label">SLA File (PDF)</label>
+                        <input type="file" name="sla_file" accept=".pdf" class="form-input @error('sla_file') border-red-500 @enderror">
+                        @error('sla_file') <p class="form-error">{{ $message }}</p> @enderror
+                        <p class="text-xs mt-1" style="color: var(--color-text-secondary);">Max 10MB.</p>
+                    </div>
+                </div>
             </div>
             <div class="flex justify-end gap-3">
                 <a href="{{ route('vendors.index') }}" class="btn btn-secondary">Cancel</a>

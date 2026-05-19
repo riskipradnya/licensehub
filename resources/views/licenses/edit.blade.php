@@ -9,7 +9,7 @@
             <a href="{{ route('licenses.show', $license) }}" class="btn btn-secondary text-sm">← Back</a>
         </div>
 
-        <form method="POST" action="{{ route('licenses.update', $license) }}" enctype="multipart/form-data" x-data="{ licenseType: '{{ old('type', $license->type) }}', loading: false }" @submit="loading = true" id="edit-license-form">
+        <form method="POST" action="{{ route('licenses.update', $license) }}" enctype="multipart/form-data" x-data="{ licenseType: '{{ old('type', $license->type) }}', loading: false, docs: [] }" @submit="loading = true" id="edit-license-form">
             @csrf
             @method('PUT')
 
@@ -102,6 +102,43 @@
             <div class="card mb-6">
                 <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-secondary);">Additional Notes</h3>
                 <textarea id="notes" name="notes" rows="3" class="form-input">{{ old('notes', $license->notes) }}</textarea>
+            </div>
+
+            {{-- Supporting Documents --}}
+            <div class="card mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-secondary);">Upload Dokumen Tambahan</h3>
+                    <button type="button" @click="docs.push({id: Date.now()})" class="btn btn-secondary text-xs">+ Tambah File Baru</button>
+                </div>
+                
+                <div class="space-y-3">
+                    <template x-for="(doc, index) in docs" :key="doc.id">
+                        <div class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="form-label text-xs">Tipe Dokumen</label>
+                                    <select :name="`documents[${index}][type]`" class="form-input py-1.5 text-sm" required>
+                                        <option value="contract">Contract</option>
+                                        <option value="invoice">Invoice</option>
+                                        <option value="certificate">Certificate</option>
+                                        <option value="quotation">Quotation</option>
+                                        <option value="other" selected>Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label text-xs">Pilih File</label>
+                                    <input type="file" :name="`documents[${index}][file]`" accept=".pdf,.docx,.zip,.png,.jpg,.jpeg" class="form-input py-1 text-sm" required>
+                                </div>
+                            </div>
+                            <button type="button" @click="docs.splice(index, 1)" class="btn-ghost text-red-500 mt-6" title="Hapus baris">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </template>
+                    <div x-show="docs.length === 0" class="text-xs text-center py-4" style="color: var(--color-text-secondary);">
+                        Klik "+ Tambah File Baru" untuk mengunggah dokumen pelengkap. Dokumen lama tidak akan terhapus.
+                    </div>
+                </div>
             </div>
 
         </form>

@@ -154,4 +154,16 @@ class PaymentController extends Controller
 
         return view('finance.payment-history', compact('payments'));
     }
+
+    /**
+     * Download Payment Receipt as PDF.
+     */
+    public function downloadReceipt(Payment $payment)
+    {
+        $payment->load(['license.vendor', 'license.category']);
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('finance.receipt_pdf', compact('payment'));
+        
+        return $pdf->download('Receipt-'.$payment->reference_number.'.pdf');
+    }
 }

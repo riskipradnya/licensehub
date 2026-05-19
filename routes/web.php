@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('vendors', VendorController::class);
 
     // === Documents ===
+    Route::delete('/documents/vendor/{vendor}/{field}', [DocumentController::class, 'destroyVendorDoc'])->name('documents.destroyVendorDoc');
     Route::resource('documents', DocumentController::class)->only(['index', 'store', 'show', 'destroy']);
 
     // === Monitoring ===
@@ -71,6 +72,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
         Route::post('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.markPaid');
         Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+        Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
 
 
 

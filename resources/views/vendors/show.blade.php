@@ -2,7 +2,13 @@
     <div class="max-w-4xl mx-auto">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold shrink-0" style="background: {{ $vendor->color }};">{{ $vendor->initial }}</div>
+                @if($vendor->logo)
+                    <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 bg-white border border-gray-200 overflow-hidden">
+                        <img src="{{ Storage::url($vendor->logo) }}" alt="Logo" class="w-full h-full object-contain">
+                    </div>
+                @else
+                    <div class="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold shrink-0" style="background: {{ $vendor->color }};">{{ $vendor->initial }}</div>
+                @endif
                 <div>
                     <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">{{ $vendor->name }}</h2>
                     <p class="text-sm" style="color: var(--color-text-secondary);">{{ $vendor->email ?? '—' }}</p>
@@ -100,6 +106,34 @@
                     </div>
                 </div>
                 @endif
+                <div class="card">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider mb-3" style="color: var(--color-text-secondary);">Dokumen Legalitas</h3>
+                    <div class="space-y-3">
+                        @if($vendor->msa_file)
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm" style="color: var(--color-text-secondary);">MSA Document</span>
+                                <a href="{{ Storage::url($vendor->msa_file) }}" target="_blank" class="btn btn-secondary text-xs">📄 View</a>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm" style="color: var(--color-text-secondary);">MSA Document</span>
+                                <span class="text-xs" style="color: var(--color-status-warning);">Belum Ada</span>
+                            </div>
+                        @endif
+
+                        @if($vendor->sla_file)
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm" style="color: var(--color-text-secondary);">SLA Document</span>
+                                <a href="{{ Storage::url($vendor->sla_file) }}" target="_blank" class="btn btn-secondary text-xs">📄 View</a>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm" style="color: var(--color-text-secondary);">SLA Document</span>
+                                <span class="text-xs" style="color: var(--color-status-warning);">Belum Ada</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
                 <div class="card">
                     <h3 class="text-sm font-semibold uppercase tracking-wider mb-3" style="color: var(--color-text-secondary);">Info</h3>
                     <div class="space-y-2 text-xs" style="color: var(--color-text-secondary);">

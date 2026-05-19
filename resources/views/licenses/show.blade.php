@@ -10,16 +10,15 @@
                 <div>
                     <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">{{ $license->name }}</h2>
                     <div class="flex items-center gap-2 mt-1">
+                        <x-status-badge :status="$license->status" />
                         @if($license->days_until_expiry !== null)
-                            @if($license->days_until_expiry <= 0)
-                                <x-status-badge status="expired" label="Expired {{ abs($license->days_until_expiry) }} hari lalu" />
-                            @elseif($license->days_until_expiry <= 30)
-                                <x-status-badge status="expiring" label="H-{{ $license->days_until_expiry }} — Expiring Soon" />
-                            @else
-                                <x-status-badge status="active" />
-                            @endif
+                            <span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background: var(--color-content-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">
+                                {{ $license->days_until_expiry <= 0 ? 'Expired '.abs($license->days_until_expiry).' hari lalu' : 'H-'.$license->days_until_expiry }}
+                            </span>
                         @else
-                            <x-status-badge status="active" label="Perpetual" />
+                            <span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background: var(--color-content-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">
+                                Perpetual
+                            </span>
                         @endif
                     </div>
                 </div>
@@ -83,14 +82,22 @@
                     @if($license->documents->isEmpty())
                         <p class="text-sm text-center py-4" style="color: var(--color-text-secondary);">Belum ada dokumen terlampir.</p>
                     @else
-                        <div class="space-y-2">
+                        <div class="space-y-3">
                             @foreach($license->documents as $doc)
-                            <div class="flex items-center gap-3 p-3 rounded-lg" style="background: var(--color-content-bg); border: 1px solid var(--color-border);">
-                                <svg class="w-5 h-5 shrink-0" style="color: var(--color-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium">{{ $doc->original_name }}</p>
-                                    <p class="text-xs" style="color: var(--color-text-secondary);">{{ $doc->formatted_size }} • {{ $doc->created_at->format('d M Y') }}</p>
+                            <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--color-content-bg); border: 1px solid var(--color-border);">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded bg-gray-100 flex items-center justify-center shrink-0">
+                                        <span class="text-lg">📄</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium" style="color: var(--color-text-primary);">{{ $doc->file_name }}</p>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full" style="background: var(--color-primary-50); color: var(--color-primary);">{{ $doc->document_type }}</span>
+                                            <span class="text-xs" style="color: var(--color-text-secondary);">{{ $doc->file_size_formatted }}</span>
+                                        </div>
+                                    </div>
                                 </div>
+                                <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="btn btn-secondary text-xs">Download</a>
                             </div>
                             @endforeach
                         </div>

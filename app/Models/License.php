@@ -160,30 +160,20 @@ class License extends Model
             default     => 'info',
         };
     }
-
     /**
-     * Get computed status based on expiry date.
+     * STATUS MANAGEMENT — ARSITEKTUR PENTING:
+     *
+     * Kolom `status` di tabel licenses adalah SINGLE SOURCE OF TRUTH.
+     * Gunakan SELALU $license->status untuk membaca status.
+     *
+     * Status ditulis oleh dua mekanisme:
+     *   1. LicenseController::computeStatus() — saat create/update via form
+     *   2. XenditController::renewLicense()   — saat webhook Xendit COMPLETED
+     *
+     * JANGAN gunakan accessor yang menghitung ulang status dari expiry_date
+     * secara real-time, karena akan mengabaikan status 'active' yang
+     * sudah ditulis oleh proses pembayaran/renewal.
+     *
+     * Untuk menampilkan sisa hari: gunakan $license->days_until_expiry.
      */
-    public function getComputedStatusAttribute(): string
-    {
-        if ($this->type === 'perpetual' && !$this->expiry_date) {
-            return 'active';
-        }
-
-        if (!$this->expiry_date) {
-            return $this->status;
-        }
-
-        $daysLeft = $this->days_until_expiry;
-
-        if ($daysLeft !== null && $daysLeft <= 0) {
-            return 'expired';
-        }
-
-        if ($daysLeft !== null && $daysLeft <= 30) {
-            return 'expiring';
-        }
-
-        return 'active';
-    }
 }

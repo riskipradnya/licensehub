@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\Vendor;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -57,12 +58,31 @@ class VendorController extends Controller
             'sla_hours'      => ['nullable', 'in:24/7,business'],
             'bank_name'           => ['nullable', Rule::in(array_keys(XenditController::BANK_CODES))],
             'bank_account_number' => ['nullable', 'string', 'max:50'],
+            'logo'                => ['nullable', 'image', 'mimes:jpeg,png,jpg,svg', 'max:2048'],
+            'msa_file'            => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'sla_file'            => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ], [
             'name.required' => 'Nama vendor wajib diisi.',
             'email.required' => 'Email support wajib diisi.',
             'email.email'    => 'Format email tidak valid.',
             'website.url'    => 'Format URL website tidak valid.',
+            'logo.image'     => 'Logo harus berupa gambar.',
+            'logo.max'       => 'Ukuran logo maksimal 2MB.',
+            'msa_file.mimes' => 'MSA File harus berupa PDF.',
+            'msa_file.max'   => 'Ukuran MSA File maksimal 10MB.',
+            'sla_file.mimes' => 'SLA File harus berupa PDF.',
+            'sla_file.max'   => 'Ukuran SLA File maksimal 10MB.',
         ]);
+
+        if ($request->hasFile('logo')) {
+            $validated['logo'] = $request->file('logo')->store('vendors/logos', 'public');
+        }
+        if ($request->hasFile('msa_file')) {
+            $validated['msa_file'] = $request->file('msa_file')->store('vendors/docs', 'public');
+        }
+        if ($request->hasFile('sla_file')) {
+            $validated['sla_file'] = $request->file('sla_file')->store('vendors/docs', 'public');
+        }
 
         $vendor = Vendor::create($validated);
 
@@ -121,14 +141,36 @@ class VendorController extends Controller
             'sla_hours'      => ['nullable', 'in:24/7,business'],
             'bank_name'           => ['nullable', Rule::in(array_keys(XenditController::BANK_CODES))],
             'bank_account_number' => ['nullable', 'string', 'max:50'],
+            'logo'                => ['nullable', 'image', 'mimes:jpeg,png,jpg,svg', 'max:2048'],
+            'msa_file'            => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'sla_file'            => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ], [
             'name.required' => 'Nama vendor wajib diisi.',
             'email.required' => 'Email support wajib diisi.',
             'email.email'    => 'Format email tidak valid.',
             'website.url'    => 'Format URL website tidak valid.',
+            'logo.image'     => 'Logo harus berupa gambar.',
+            'logo.max'       => 'Ukuran logo maksimal 2MB.',
+            'msa_file.mimes' => 'MSA File harus berupa PDF.',
+            'msa_file.max'   => 'Ukuran MSA File maksimal 10MB.',
+            'sla_file.mimes' => 'SLA File harus berupa PDF.',
+            'sla_file.max'   => 'Ukuran SLA File maksimal 10MB.',
         ]);
 
         $oldValues = $vendor->only(array_keys($validated));
+
+        if ($request->hasFile('logo')) {
+            if ($vendor->logo) Storage::disk('public')->delete($vendor->logo);
+            $validated['logo'] = $request->file('logo')->store('vendors/logos', 'public');
+        }
+        if ($request->hasFile('msa_file')) {
+            if ($vendor->msa_file) Storage::disk('public')->delete($vendor->msa_file);
+            $validated['msa_file'] = $request->file('msa_file')->store('vendors/docs', 'public');
+        }
+        if ($request->hasFile('sla_file')) {
+            if ($vendor->sla_file) Storage::disk('public')->delete($vendor->sla_file);
+            $validated['sla_file'] = $request->file('sla_file')->store('vendors/docs', 'public');
+        }
 
         $vendor->update($validated);
 

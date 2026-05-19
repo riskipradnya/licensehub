@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'name', 'contact_person', 'email', 'phone', 'address', 'website',
     'notes', 'sla_response', 'sla_hours', 'bank_name', 'bank_account_number', 'is_active',
+    'logo', 'msa_file', 'sla_file',
 ])]
 class Vendor extends Model
 {

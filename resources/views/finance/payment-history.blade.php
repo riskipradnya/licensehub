@@ -32,7 +32,7 @@
     <div class="card p-0 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="data-table" id="payment-history-table">
-                <thead><tr><th>Ref #</th><th>License</th><th>Amount</th><th>Method</th><th>Date</th><th>Created By</th><th>Approved By</th><th>Status</th></tr></thead>
+                <thead><tr><th>Ref #</th><th>License</th><th>Amount</th><th>Method</th><th>Date</th><th>Created By</th><th class="text-center">Status</th><th class="text-center">Actions</th></tr></thead>
                 <tbody>
                     @forelse($payments as $pay)
                     <tr>
@@ -42,8 +42,16 @@
                         <td><span class="text-xs capitalize">{{ str_replace('_', ' ', $pay->payment_method ?? '—') }}</span></td>
                         <td>{{ $pay->payment_date->format('d M Y') }}</td>
                         <td class="text-xs">{{ $pay->creator->name ?? '—' }}</td>
-                        <td class="text-xs">{{ $pay->approver->name ?? '—' }}</td>
-                        <td><x-status-badge :status="$pay->status" size="sm" /></td>
+                        <td class="text-center"><x-status-badge :status="$pay->status" size="sm" /></td>
+                        <td class="text-center">
+                            @if($pay->status === 'paid')
+                                <a href="{{ route('payments.receipt', $pay->id) }}" class="btn-ghost p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50" title="Download Receipt">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </a>
+                            @else
+                                <span class="text-xs text-gray-400">—</span>
+                            @endif
+                        </td>
                     </tr>
                     @empty
                     <tr>

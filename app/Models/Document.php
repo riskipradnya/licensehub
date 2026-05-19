@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['license_id', 'uploaded_by', 'file_name', 'file_path', 'file_size', 'file_type', 'description'])]
+#[Fillable(['license_id', 'uploaded_by', 'file_name', 'file_path', 'file_size', 'document_type', 'description'])]
 class Document extends Model
 {
+    use SoftDeletes;
+
     protected function casts(): array
     {
         return [
