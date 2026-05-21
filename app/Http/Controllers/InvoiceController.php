@@ -77,12 +77,10 @@ class InvoiceController extends Controller
         $validated = $request->validate([
             'license_id'          => ['required', 'exists:licenses,id'],
             'amount'              => ['required', 'numeric', 'min:1'],
-            'tax_amount'          => ['nullable', 'numeric', 'min:0'],
             'invoice_date'        => ['required', 'date'],
             'due_date'            => ['required', 'date', 'after_or_equal:invoice_date'],
             'notes'               => ['nullable', 'string', 'max:2000'],
             'vendor_invoice_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
-            'update_master_price' => ['nullable', 'boolean'],
         ], [
             'license_id.required'        => 'Lisensi wajib dipilih.',
             'amount.required'            => 'Jumlah invoice wajib diisi.',
@@ -92,8 +90,7 @@ class InvoiceController extends Controller
         ]);
 
         $license = License::with('vendor')->findOrFail($validated['license_id']);
-        $taxAmount = $validated['tax_amount'] ?? 0;
-
+        
         $filePath = null;
         if ($request->hasFile('vendor_invoice_file')) {
             $filePath = $request->file('vendor_invoice_file')->store('invoices/docs', 'public');
@@ -104,19 +101,21 @@ class InvoiceController extends Controller
             'license_id'     => $validated['license_id'],
             'vendor_id'      => $license->vendor_id,
             'amount'         => $validated['amount'],
-            'tax_amount'     => $taxAmount,
-            'total_amount'   => $validated['amount'] + $taxAmount,
+            'tax_amount'     => 0,
+            'total_amount'   => $validated['amount'],
             'invoice_date'   => $validated['invoice_date'],
             'due_date'       => $validated['due_date'],
-            'status'         => 'draft',
+            'status'         => 'unpaid',
             'file_path'      => $filePath,
             'notes'          => $validated['notes'] ?? null,
             'created_by'     => auth()->id(),
         ]);
 
-        if (!empty($validated['update_master_price'])) {
+        // Auto-update master price of license unconditionally
+        $oldCost = $license->cost;
+        if ($oldCost != $validated['amount']) {
             $license->update(['cost' => $validated['amount']]);
-            AuditLog::log('updated', 'License', $license->id, ['cost' => $license->cost], ['cost' => $validated['amount'], 'reason' => 'Auto-updated from invoice']);
+            AuditLog::log('updated', 'License', $license->id, ['cost' => $oldCost], ['cost' => $validated['amount'], 'reason' => 'Auto-updated from invoice']);
         }
 
         AuditLog::log('created', 'Invoice', $invoice->id, null, [
@@ -135,11 +134,18 @@ class InvoiceController extends Controller
     public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => ['required', 'in:draft,sent,paid,overdue,cancelled'],
+            'status' => ['required', 'in:unpaid,paid,overdue'],
         ]);
 
         $oldStatus = $invoice->status;
         $invoice->update(['status' => $validated['status']]);
+
+        // Auto-renewal for billing cycle when marked as paid
+        if ($validated['status'] === 'paid' && $oldStatus !== 'paid') {
+            if ($invoice->license) {
+                $invoice->license->renewExpiryDate();
+            }
+        }
 
         AuditLog::log('updated_status', 'Invoice', $invoice->id,
             ['status' => $oldStatus],

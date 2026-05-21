@@ -36,10 +36,9 @@
             <div class="md:col-span-2">
                 <select name="status" class="form-input w-full" onchange="this.form.submit()">
                     <option value="">All Status</option>
-                    <option value="draft" @selected(request('status') === 'draft')>Draft</option>
                     <option value="unpaid" @selected(request('status') === 'unpaid')>Unpaid</option>
                     <option value="paid" @selected(request('status') === 'paid')>Paid</option>
-                    <option value="cancelled" @selected(request('status') === 'cancelled')>Cancelled</option>
+                    <option value="overdue" @selected(request('status') === 'overdue')>Overdue</option>
                 </select>
             </div>
             <div class="md:col-span-2">
@@ -89,7 +88,7 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     </button>
                                     <div x-show="showStatus" @click.away="showStatus = false" x-transition class="absolute right-0 mt-1 w-32 rounded-lg shadow-lg z-10" style="background: var(--color-card-bg); border: 1px solid var(--color-border);">
-                                        @foreach(['draft', 'sent', 'paid', 'overdue', 'cancelled'] as $st)
+                                        @foreach(['unpaid', 'paid', 'overdue'] as $st)
                                             @if($st !== $inv->status)
                                             <form method="POST" action="{{ route('invoices.updateStatus', $inv) }}">
                                                 @csrf
@@ -130,26 +129,15 @@
 
     {{-- CREATE INVOICE MODAL --}}
     <x-modal id="create-invoice" title="Create Invoice" maxWidth="md">
-        <form method="POST" action="{{ route('invoices.store') }}" id="create-invoice-form" enctype="multipart/form-data" x-data="{
-            licenses: {{ $licenses->toJson() }},
-            selectedLicenseId: '',
-            amount: '',
-            dueDate: '{{ now()->addDays(14)->format('Y-m-d') }}',
-            updateFields() {
-                const license = this.licenses.find(l => l.id == this.selectedLicenseId);
-                if (license) {
-                    this.amount = parseFloat(license.cost) || 0;
-                }
-            }
-        }">
+        <form method="POST" action="{{ route('invoices.store') }}" id="create-invoice-form" enctype="multipart/form-data" x-data="{ amount: '', dueDate: '{{ now()->addDays(14)->format('Y-m-d') }}' }">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="md:col-span-2">
                     <label class="form-label">Related License <span style="color: var(--color-status-danger);">*</span></label>
-                    <select name="license_id" class="form-input" required x-model="selectedLicenseId" @change="updateFields">
-                        <option value="" disabled selected>Pilih Lisensi...</option>
+                    <select name="license_id" class="form-input" required @change="amount = parseFloat($event.target.options[$event.target.selectedIndex].dataset.price) || 0">
+                        <option value="" disabled selected data-price="0">Pilih Lisensi...</option>
                         @foreach($licenses as $license)
-                            <option value="{{ $license->id }}">{{ $license->name }} — {{ $license->vendor->name ?? '' }}</option>
+                            <option value="{{ $license->id }}" data-price="{{ $license->cost }}">{{ $license->name }} — {{ $license->vendor->name ?? '' }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -163,19 +151,11 @@
                 </div>
                 <div class="md:col-span-2">
                     <label class="form-label">Amount (Rp) <span style="color: var(--color-status-danger);">*</span></label>
-                    <input type="number" name="amount" class="form-input" placeholder="0" required min="1" x-model="amount">
-                    <label class="inline-flex items-center mt-2 cursor-pointer">
-                        <input type="checkbox" name="update_master_price" value="1" class="form-checkbox text-primary h-4 w-4 border-gray-300 rounded">
-                        <span class="ml-2 text-xs" style="color: var(--color-text-secondary);">Update harga master lisensi dengan nominal tagihan baru ini</span>
-                    </label>
+                    <input type="number" name="amount" class="form-input [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" placeholder="0" required min="1" x-model="amount">
                 </div>
                 <div class="md:col-span-2">
                     <label class="form-label">Vendor Invoice File (PDF/Image, max 10MB)</label>
                     <input type="file" name="vendor_invoice_file" class="form-input text-sm" accept=".pdf,.jpg,.jpeg,.png">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="form-label">Tax (Rp)</label>
-                    <input type="number" name="tax_amount" class="form-input" placeholder="0" min="0" value="0">
                 </div>
                 <div class="md:col-span-2">
                     <label class="form-label">Notes</label>
@@ -184,7 +164,7 @@
             </div>
             <x-slot:footer>
                 <button type="button" @click="hide()" class="btn btn-secondary">Cancel</button>
-                <button type="submit" class="btn btn-primary">📝 Create Invoice</button>
+                <button type="submit" form="create-invoice-form" class="btn btn-primary">📝 Create Invoice</button>
             </x-slot:footer>
         </form>
     </x-modal>

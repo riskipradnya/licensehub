@@ -176,4 +176,41 @@ class License extends Model
      *
      * Untuk menampilkan sisa hari: gunakan $license->days_until_expiry.
      */
+
+    /**
+     * Renew the license expiry date based on its billing cycle.
+     */
+    public function renewExpiryDate(): void
+    {
+        $expiry = $this->expiry_date ? $this->expiry_date->copy() : now();
+        $shouldUpdate = true;
+        
+        switch ($this->billing_cycle) {
+            case 'monthly':
+                $expiry->addMonthNoOverflow();
+                break;
+            case 'quarterly':
+                $expiry->addMonthsNoOverflow(3);
+                break;
+            case 'yearly':
+                $expiry->addYearNoOverflow();
+                break;
+            default:
+                $shouldUpdate = false;
+                break;
+        }
+        
+        if ($shouldUpdate) {
+            $oldExpiry = $this->expiry_date;
+            
+            $this->expiry_date = $expiry;
+            $this->status = 'active';
+            $this->save();
+            
+            AuditLog::log('updated', 'License', $this->id, 
+                ['expiry_date' => $oldExpiry], 
+                ['expiry_date' => $this->expiry_date, 'reason' => 'Auto-renewal via payment/invoice']
+            );
+        }
+    }
 }

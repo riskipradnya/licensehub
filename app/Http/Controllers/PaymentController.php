@@ -59,7 +59,7 @@ class PaymentController extends Controller
         ]);
 
         $validated['created_by'] = auth()->id();
-        $validated['status'] = 'pending';
+        $validated['status'] = $request->input('status', 'pending');
 
         $payment = Payment::create($validated);
 

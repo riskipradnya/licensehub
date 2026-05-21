@@ -23,6 +23,42 @@ class Payment extends Model
         ];
     }
 
+    protected static function booted()
+    {
+        $syncLogic = function (self $payment) {
+            // 1. Cari Invoice Unpaid berdasarkan license_id
+            $invoice = \App\Models\Invoice::where('license_id', $payment->license_id)
+                ->where('status', 'unpaid')->first();
+                
+            // 2. Jika ada, update status jadi paid dan isi payment_id, lalu catat AuditLog
+            if ($invoice) {
+                $invoice->update(['status' => 'paid', 'payment_id' => $payment->id]);
+                
+                \App\Models\AuditLog::log('updated_status', 'Invoice', $invoice->id,
+                    ['status' => 'unpaid', 'payment_id' => null],
+                    ['status' => 'paid', 'payment_id' => $payment->id, 'reason' => 'Auto-synced from Payment Event']
+                );
+            }
+            
+            // 3. Eksekusi perpanjangan lisensi
+            if ($payment->license) {
+                $payment->license->renewExpiryDate();
+            }
+        };
+
+        static::created(function (self $payment) use ($syncLogic) {
+            if ($payment->status === 'paid') {
+                $syncLogic($payment);
+            }
+        });
+
+        static::updated(function (self $payment) use ($syncLogic) {
+            if ($payment->wasChanged('status') && $payment->status === 'paid') {
+                $syncLogic($payment);
+            }
+        });
+    }
+
     // ─── Relationships ───────────────────────────────────────
 
     public function license(): BelongsTo
