@@ -1,4 +1,5 @@
 @props(['count' => 0])
+@php $count = auth()->user()->unreadNotifications->count(); @endphp
 
 <div x-data="dropdown" class="relative notification-bell" id="notification-bell">
     <button @click="toggle()" class="btn-ghost p-2 rounded-lg relative">
@@ -23,12 +24,16 @@
             @endif
         </div>
         <div class="max-h-80 overflow-y-auto divide-y" style="border-color: var(--color-border);">
-            {{ $slot }}
-            @if(!isset($slot) || (string)$slot === '')
+            @forelse(auth()->user()->unreadNotifications->take(5) as $notification)
+            <div class="px-4 py-3 hover:bg-gray-50 transition block">
+                <div class="text-sm font-semibold" style="color: var(--color-text-primary);">{{ $notification->data['title'] ?? 'Notification' }}</div>
+                <div class="text-xs mt-1" style="color: var(--color-text-secondary);">{{ $notification->created_at->diffForHumans() }}</div>
+            </div>
+            @empty
             <div class="px-4 py-6 text-center text-sm" style="color: var(--color-text-secondary);">
                 Tidak ada notifikasi baru
             </div>
-            @endif
+            @endforelse
         </div>
         <a href="/notifications" class="block px-4 py-2.5 text-center text-xs font-semibold transition"
            style="color: var(--color-primary); border-top: 1px solid var(--color-border);">

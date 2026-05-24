@@ -40,9 +40,24 @@ class Payment extends Model
                 );
             }
             
-            // 3. Eksekusi perpanjangan lisensi
+            // 3. Eksekusi perpanjangan lisensi dan perbarui notifikasi
             if ($payment->license) {
                 $payment->license->renewExpiryDate();
+
+                // 4. Update notifikasi (Mark as Read notifikasi lama, dan kirim notifikasi Resolved)
+                $users = \App\Models\User::whereIn('role', ['super_admin', 'it_manager', 'finance_manager', 'it_staff'])
+                    ->where('is_active', 1)
+                    ->get();
+                    
+                foreach ($users as $user) {
+                    $user->unreadNotifications
+                        ->where('data.license_id', $payment->license_id)
+                        ->each(function ($notification) {
+                            $notification->delete();
+                        });
+                }
+                
+                \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\LicenseExpiringNotification($payment->license, 365, 'active'));
             }
         };
 

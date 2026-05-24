@@ -17,3 +17,6 @@ Artisan::command('inspire', function () {
         \Illuminate\Support\Facades\Log::info("Auto-marked {$count} unpaid invoices as overdue.");
     }
 })->daily()->name('check-overdue-invoices');
+
+// Auto-check for expiring licenses and send notifications
+\Illuminate\Support\Facades\Schedule::command('app:check-expiring-licenses')->daily();

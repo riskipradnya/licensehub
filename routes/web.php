@@ -6,6 +6,8 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LicenseController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\XenditController;
 use Illuminate\Support\Facades\Route;
@@ -51,7 +53,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('documents', DocumentController::class)->only(['index', 'store', 'show', 'destroy']);
 
     // === Monitoring ===
-    Route::get('/notifications', fn() => view('monitoring.notifications'))->name('notifications.index');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
     Route::get('/cost-projection', fn() => view('monitoring.cost-projection'))->name('cost-projection.index');
 
     Route::middleware('role:super_admin,finance_manager')->group(function () {
@@ -82,7 +85,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.updateStatus');
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
 
-        Route::get('/reports', fn() => view('finance.reports'))->name('reports.index');
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     });
 
     // === Settings ===

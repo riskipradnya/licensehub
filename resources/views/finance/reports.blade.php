@@ -6,32 +6,39 @@
             <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Laporan keuangan dan analisis biaya lisensi</p>
         </div>
         <div class="flex gap-2">
-            <select class="form-input w-auto" id="report-year">
-                <option>2026</option><option>2025</option><option>2024</option>
+            <select class="form-input w-auto" id="report-year" onchange="window.location.href='?year='+this.value">
+                @foreach($availableYears as $y)
+                    <option value="{{ $y }}" @selected($y == $year)>{{ $y }}</option>
+                @endforeach
             </select>
             <button class="btn btn-secondary text-sm" id="export-report">📊 Export PDF</button>
         </div>
     </div>
 
-    {{-- YEARLY SUMMARY --}}
+    <div id="report-content">
+        {{-- YEARLY SUMMARY --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <x-stat-card label="Total Annual Spend" :value="385000000" variant="info" prefix="Rp " />
-        <x-stat-card label="Total Payments" :value="42" variant="active" />
-        <x-stat-card label="Total Vendors" :value="12" variant="info" />
-        <x-stat-card label="Active Licenses" :value="124" variant="active" />
+        <x-stat-card label="Total Annual Spend" :value="$totalAnnualSpend" variant="info" prefix="Rp " />
+        <x-stat-card label="Total Payments" :value="$totalPayments" variant="active" />
+        <x-stat-card label="Total Vendors" :value="$totalVendors" variant="info" />
+        <x-stat-card label="Active Licenses" :value="$activeLicenses" variant="active" />
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {{-- MONTHLY SPEND CHART --}}
         <div class="card">
-            <h3 class="text-base font-semibold mb-4" style="color: var(--color-text-primary);">Monthly Spending (2026)</h3>
-            <canvas id="monthlySpendChart" height="260"></canvas>
+            <h3 class="text-base font-semibold mb-4" style="color: var(--color-text-primary);">Monthly Spending ({{ $year }})</h3>
+            <div class="relative w-full h-[300px]">
+                <canvas id="monthlySpendChart"></canvas>
+            </div>
         </div>
 
         {{-- CATEGORY PIE CHART --}}
         <div class="card">
             <h3 class="text-base font-semibold mb-4" style="color: var(--color-text-primary);">Spending by Category</h3>
-            <canvas id="categoryChart" height="260"></canvas>
+            <div class="relative w-full h-[300px]">
+                <canvas id="categoryChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -44,16 +51,7 @@
             <table class="data-table" id="top-vendors-table">
                 <thead><tr><th>#</th><th>Vendor</th><th>Licenses</th><th>Total Spend</th><th>% of Total</th><th>Trend</th></tr></thead>
                 <tbody>
-                    @php
-                    $topVendors = [
-                        ['rank' => 1, 'name' => 'Oracle Corp', 'licenses' => 8, 'spend' => 98000000, 'pct' => '25.5%', 'trend' => 'up'],
-                        ['rank' => 2, 'name' => 'Microsoft', 'licenses' => 24, 'spend' => 86000000, 'pct' => '22.3%', 'trend' => 'up'],
-                        ['rank' => 3, 'name' => 'VMware', 'licenses' => 6, 'spend' => 64000000, 'pct' => '16.6%', 'trend' => 'down'],
-                        ['rank' => 4, 'name' => 'Fortinet', 'licenses' => 4, 'spend' => 48000000, 'pct' => '12.5%', 'trend' => 'up'],
-                        ['rank' => 5, 'name' => 'Adobe Inc.', 'licenses' => 12, 'spend' => 36000000, 'pct' => '9.4%', 'trend' => 'down'],
-                    ];
-                    @endphp
-                    @foreach($topVendors as $tv)
+                    @forelse($topVendors as $tv)
                     <tr>
                         <td class="font-bold" style="color: var(--color-primary);">{{ $tv['rank'] }}</td>
                         <td class="font-medium">{{ $tv['name'] }}</td>
@@ -75,64 +73,115 @@
                             @endif
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-sm" style="color: var(--color-text-secondary);">Belum ada data pembayaran di tahun {{ $year }}.</td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+    </div>
 
 @push('scripts')
-<script type="module">
-    import Chart from 'chart.js/auto';
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const formatRupiah = function(context) {
+            let value = context.raw || 0;
+            return 'Rp ' + value.toLocaleString('id-ID');
+        };
 
-    // Monthly Spend
-    const mc = document.getElementById('monthlySpendChart');
-    if (mc) {
-        new Chart(mc, {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'Biaya (Juta Rp)',
-                    data: [32, 28, 56, 45, 38, 22, 30, 0, 0, 0, 0, 0],
-                    backgroundColor: '#6366f1',
-                    borderRadius: 6,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { callback: v => 'Rp ' + v + 'M' } }
+        // Monthly Spend Chart
+        const mc = document.getElementById('monthlySpendChart');
+        if (mc) {
+            new Chart(mc, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Biaya',
+                        data: @json($monthlySpend),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: formatRupiah
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { 
+                            beginAtZero: true,
+                            suggestedMax: 1000000,
+                            grid: { color: 'rgba(0,0,0,0.05)' }, 
+                            ticks: { 
+                                callback: function(value) {
+                                    if(value === 0) return 'Rp 0';
+                                    return 'Rp ' + (value / 1000000) + 'M';
+                                } 
+                            } 
+                        }
+                    }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    // Category Pie
-    const cc = document.getElementById('categoryChart');
-    if (cc) {
-        new Chart(cc, {
-            type: 'doughnut',
-            data: {
-                labels: ['Software', 'Security', 'OS', 'Antivirus', 'Infrastructure'],
-                datasets: [{
-                    data: [42, 23, 15, 12, 8],
-                    backgroundColor: ['#6366f1', '#f59e0b', '#22c55e', '#ef4444', '#8b5cf6'],
-                    borderWidth: 0,
-                    hoverOffset: 10,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                cutout: '65%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { family: 'Inter', size: 12 } } }
+        // Category Pie Chart
+        const cc = document.getElementById('categoryChart');
+        if (cc) {
+            new Chart(cc, {
+                type: 'doughnut',
+                data: {
+                    labels: @json($categoryLabels),
+                    datasets: [{
+                        data: @json($categoryData),
+                        backgroundColor: ['#6366f1', '#f59e0b', '#22c55e', '#ef4444', '#8b5cf6', '#3b82f6', '#14b8a6', '#f43f5e', '#a855f7', '#06b6d4'],
+                        borderWidth: 0,
+                        hoverOffset: 10,
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { usePointStyle: true, padding: 16, font: { family: 'Inter', size: 12 } } 
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: formatRupiah
+                            }
+                        }
+                    }
                 }
-            }
-        });
-    }
+            });
+        }
+    });
+
+    document.getElementById('export-report').addEventListener('click', function() {
+        const element = document.getElementById('report-content');
+        const opt = {
+            margin: 0.5,
+            filename: 'Financial_Report_{{ $year }}.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(element).save();
+    });
 </script>
 @endpush
 
