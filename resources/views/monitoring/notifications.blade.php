@@ -29,43 +29,23 @@
         {{-- NOTIFICATION LIST --}}
         <div class="space-y-3 mt-4">
             @forelse($notifications as $notification)
-            @php
-                $lvl = $notification->data['level'] ?? 'info';
-                $cMap = [
-                    'critical' => '#991B1B',
-                    'danger'   => '#DC2626',
-                    'warning'  => '#F59E0B',
-                    'info'     => '#3B82F6',
-                    'active'   => 'var(--color-status-active)'
-                ];
-                $bgMap = [
-                    'critical' => '#fef2f2',
-                    'danger'   => '#fef2f2',
-                    'warning'  => '#fffbeb',
-                    'info'     => '#eff6ff',
-                    'active'   => 'var(--color-status-active-bg)'
-                ];
-                $bColor = $cMap[$lvl] ?? 'var(--color-status-info)';
-                $iBg    = $bgMap[$lvl] ?? 'var(--color-status-info-bg)';
-                $iColor = $cMap[$lvl] ?? 'var(--color-status-info)';
-            @endphp
             <div x-show="tab === 'all' || tab === '{{ $notification->data['tab'] ?? 'all' }}'"
                  x-transition
                  class="card flex items-start gap-4 hover:shadow-md transition-shadow {{ $notification->read_at ? 'opacity-60 bg-gray-50' : 'bg-white' }}"
-                 style="border-left: 4px solid {{ $bColor }};">
+                 style="border-left: 4px solid {{ ($notification->data['level'] ?? 'info') === 'critical' ? '#b91c1c' : 'var(--color-status-' . ($notification->data['level'] ?? 'info') . ')' }};">
                 {{-- Icon --}}
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                     style="background: {{ $iBg }};">
-                    @if($lvl === 'critical')
-                        <svg class="w-5 h-5" style="color: {{ $iColor }};" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    @elseif($lvl === 'danger')
-                        <svg class="w-5 h-5" style="color: {{ $iColor }};" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-                    @elseif($lvl === 'warning')
-                        <svg class="w-5 h-5" style="color: {{ $iColor }};" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    @elseif($lvl === 'active')
-                        <svg class="w-5 h-5" style="color: {{ $iColor }};" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                     style="background: {{ ($notification->data['level'] ?? 'info') === 'critical' ? '#fef2f2' : 'var(--color-status-' . ($notification->data['level'] ?? 'info') . '-bg)' }};">
+                    @if(($notification->data['level'] ?? 'info') === 'critical')
+                        <svg class="w-5 h-5" style="color: #b91c1c;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    @elseif(($notification->data['level'] ?? 'info') === 'danger')
+                        <svg class="w-5 h-5" style="color: var(--color-status-danger);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                    @elseif(($notification->data['level'] ?? 'info') === 'warning')
+                        <svg class="w-5 h-5" style="color: var(--color-status-warning);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    @elseif(($notification->data['level'] ?? 'info') === 'active')
+                        <svg class="w-5 h-5" style="color: var(--color-status-active);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     @else
-                        <svg class="w-5 h-5" style="color: {{ $iColor }};" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg class="w-5 h-5" style="color: var(--color-status-info);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     @endif
                 </div>
 
@@ -83,12 +63,12 @@
                         </div>
                         <span class="text-xs shrink-0" style="color: var(--color-text-secondary);">{{ $notification->created_at->diffForHumans() }}</span>
                     </div>
+                    @if(in_array($notification->data['level'], ['critical', 'danger', 'warning', 'info']))
                     <div class="flex gap-2 mt-3">
-                        <a href="{{ route('licenses.show', $notification->data['license_id']) }}" class="btn btn-secondary text-xs py-1.5 px-3">View Detail</a>
-                        @if(in_array($notification->data['level'] ?? '', ['critical', 'danger', 'warning', 'info', 'expired']))
+                        <a href="{{ url('/licenses/' . $notification->data['license_id']) }}" class="btn btn-secondary text-xs py-1.5 px-3">View Detail</a>
                         <a href="{{ route('payments.renew', $notification->data['license_id']) }}" class="btn btn-primary text-xs py-1.5 px-3">Process Payment →</a>
-                        @endif
                     </div>
+                    @endif
                 </div>
             </div>
             @empty
