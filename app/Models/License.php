@@ -180,6 +180,9 @@ class License extends Model
     /**
      * Renew the license expiry date based on its billing cycle.
      */
+    /**
+     * Renew the license expiry date based on its billing cycle.
+     */
     public function renewExpiryDate(): void
     {
         $expiry = $this->expiry_date ? $this->expiry_date->copy() : now();
@@ -207,10 +210,21 @@ class License extends Model
             $this->status = 'active';
             $this->save();
             
-            AuditLog::log('updated', 'License', $this->id, 
+            // Log internal audit sistem
+            \App\Models\AuditLog::log('updated', 'License', $this->id, 
                 ['expiry_date' => $oldExpiry], 
                 ['expiry_date' => $this->expiry_date, 'reason' => 'Auto-renewal via payment/invoice']
             );
+
+            // 🚀 OTOMATISASI EMAIL RESOLVED: Ambil penerima aktif dan kirim email sukses
+            $recipients = \App\Models\NotificationRecipient::where('is_active', true)->get();
+            
+            if ($recipients->isNotEmpty()) {
+                \Illuminate\Support\Facades\Notification::send(
+                    $recipients, 
+                    new \App\Notifications\LicenseResolvedNotification($this)
+                );
+            }
         }
     }
 }

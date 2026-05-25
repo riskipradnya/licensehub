@@ -30,9 +30,7 @@ class CheckExpiringLicenses extends Command
     public function handle()
     {
         // Ambil user terkait yang berhak menerima notif ini
-        $users = User::whereIn('role', ['super_admin', 'it_manager', 'finance_manager', 'it_staff'])
-            ->where('is_active', 1)
-            ->get();
+        $users = \App\Models\NotificationRecipient::where('is_active', true)->get();
 
         if ($this->option('test')) {
             $license = License::first(); // Ambil 1 lisensi sembarang untuk testing

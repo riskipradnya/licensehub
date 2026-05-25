@@ -227,6 +227,14 @@ class XenditController extends Controller
             Log::error('Xendit callback error', ['message' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
+
+        
+        // Ambil daftar penerima notifikasi (IT/Finance)
+        $recipients = \App\Models\NotificationRecipient::where('is_active', true)->get();
+
+        // Kirim notifikasi Resolved secara otomatis via antrean (Queue)
+        \Illuminate\Support\Facades\Notification::send($recipients, new \App\Notifications\LicenseResolvedNotification($license));
+
     }
 
     /**

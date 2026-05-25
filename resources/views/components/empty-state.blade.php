@@ -1,3 +1,4 @@
+
 @props([
     'message' => 'Tidak ada data ditemukan.',
     'icon' => 'inbox',

@@ -94,4 +94,27 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin')->group(function () {
         Route::get('/users', fn() => view('settings.users'))->name('users.index');
     });
+
+    Route::middleware('role:super_admin,it_manager')->group(function () {
+        Route::resource('notification-settings', App\Http\Controllers\NotificationSettingController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
+    });
+});
+
+Route::get('/test-email-blast', function () {
+    try {
+        // Ambil 1 lisensi yang berstatus 'expired' atau 'expiring' untuk disimulasikan perpanjangannya
+        $license = \App\Models\License::whereIn('status', ['expired', 'expiring'])->first();
+        
+        if (!$license) {
+            return 'GAGAL SIMULASI! Tidak ada lisensi expired/expiring di database untuk diperpanjang.';
+        }
+
+        // Panggil fungsi perpanjangan tanggal. Fungsi ini sekarang otomatis memicu pengiriman email!
+        $license->renewExpiryDate();
+        
+        return 'SUKSES! Fungsi renewExpiryDate() dijalankan, tanggal diperpanjang, dan email RESOLVED masuk antrean.';
+    } catch (\Exception $e) {
+        return 'GAGAL! Error: ' . $e->getMessage();
+    }
 });

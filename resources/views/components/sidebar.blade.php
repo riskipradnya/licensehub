@@ -54,6 +54,7 @@ $menuGroups = [
         'label' => 'Settings',
         'items' => [
             ['name' => 'User & Role Management', 'icon' => 'users', 'route' => 'users', 'roles' => ['super_admin']],
+            ['name' => 'Setup Notifications', 'icon' => 'bell', 'route' => 'notification-settings', 'roles' => ['super_admin']],
             ['name' => 'Profile & Preferences', 'icon' => 'cog-6-tooth', 'route' => 'profile', 'roles' => ['*']],
         ]
     ],
