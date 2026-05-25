@@ -10,6 +10,10 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CostProjectionController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\XenditController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,10 +29,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
 
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
 
-    Route::get('/forgot-password', fn() => view('auth.forgot-password'))->name('password.request');
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -64,10 +65,10 @@ Route::middleware('auth')->group(function () {
     // === Monitoring ===
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
-    Route::get('/cost-projection', fn() => view('monitoring.cost-projection'))->name('cost-projection.index');
+    Route::get('/cost-projection', [CostProjectionController::class, 'index'])->name('cost-projection.index');
 
     Route::middleware('role:super_admin,finance_manager')->group(function () {
-        Route::get('/audit-log', fn() => view('monitoring.audit-log'))->name('audit-log.index');
+        Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
     });
 
     // === Process Payment for a specific license (accessible to all authenticated users) ===
@@ -97,10 +98,11 @@ Route::middleware('auth')->group(function () {
     });
 
     // === Settings ===
-    Route::get('/profile', fn() => view('settings.profile'))->name('profile.index');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.index');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::middleware('role:super_admin')->group(function () {
-        Route::get('/users', fn() => view('settings.users'))->name('users.index');
+        Route::resource('users', UserController::class);
     });
 
     Route::middleware('role:super_admin,it_manager')->group(function () {

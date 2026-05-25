@@ -31,14 +31,14 @@ class AuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required'],
         ]);
 
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()
-                ->withInput($request->only('email', 'remember'))
-                ->with('error', 'Email atau password salah.');
+                ->withInput($request->only('username', 'remember'))
+                ->with('error', 'Username atau password salah.');
         }
 
         // Check if the user is active
@@ -49,14 +49,14 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
 
             return back()
-                ->withInput($request->only('email'))
+                ->withInput($request->only('username'))
                 ->with('error', 'Akun Anda telah dinonaktifkan. Hubungi administrator.');
         }
 
         $request->session()->regenerate();
 
         // Log the login action
-        AuditLog::log('login');
+        activity()->log('login');
 
         return redirect()->intended(route('dashboard'));
     }
@@ -107,7 +107,9 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         // Log the registration
-        AuditLog::log('register', 'User', $user->id);
+        activity()
+            ->performedOn($user)
+            ->log('register');
 
         return redirect()->route('dashboard');
     }
@@ -117,7 +119,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request): RedirectResponse
     {
-        AuditLog::log('logout');
+        activity()->log('logout');
 
         Auth::logout();
 

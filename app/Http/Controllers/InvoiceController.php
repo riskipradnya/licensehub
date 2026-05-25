@@ -131,7 +131,10 @@ class InvoiceController extends Controller
         if (!empty($updates)) {
             $license->update($updates);
             $updates['reason'] = 'Auto-updated from invoice';
-            AuditLog::log('updated', 'License', $license->id, $oldValues, $updates);
+            activity()
+                ->performedOn($license)
+                ->withProperties(['old' => $oldValues, 'attributes' => $updates])
+                ->log('updated');
         }
 
         if ($filePath) {
@@ -146,10 +149,10 @@ class InvoiceController extends Controller
             ]);
         }
 
-        AuditLog::log('created', 'Invoice', $invoice->id, null, [
-            'invoice_number' => $invoice->invoice_number,
-            'amount'         => $invoice->total_amount,
-        ]);
+        activity()
+            ->performedOn($invoice)
+            ->withProperties(['invoice_number' => $invoice->invoice_number, 'amount' => $invoice->total_amount])
+            ->log('created');
 
         return redirect()
             ->route('invoices.index')
@@ -175,10 +178,10 @@ class InvoiceController extends Controller
             }
         }
 
-        AuditLog::log('updated_status', 'Invoice', $invoice->id,
-            ['status' => $oldStatus],
-            ['status' => $validated['status']]
-        );
+        activity()
+            ->performedOn($invoice)
+            ->withProperties(['old' => ['status' => $oldStatus], 'attributes' => ['status' => $invoice->status]])
+            ->log('updated_status');
 
         return back()->with('success', "Status invoice {$invoice->invoice_number} diperbarui.");
     }
@@ -191,7 +194,9 @@ class InvoiceController extends Controller
         $invNumber = $invoice->invoice_number;
         $invoice->delete();
 
-        AuditLog::log('deleted', 'Invoice', $invoice->id, ['invoice_number' => $invNumber]);
+        activity()
+            ->withProperties(['invoice_number' => $invNumber])
+            ->log('deleted_invoice');
 
         return redirect()
             ->route('invoices.index')

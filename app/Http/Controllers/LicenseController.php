@@ -107,7 +107,7 @@ class LicenseController extends Controller
             }
         }
 
-        AuditLog::log('created', 'License', $license->id, null, $validated);
+
 
         return redirect()
             ->route('licenses.show', $license)
@@ -211,7 +211,7 @@ class LicenseController extends Controller
             }
         }
 
-        AuditLog::log('updated', 'License', $license->id, $oldValues, $validated);
+
 
         return redirect()
             ->route('licenses.show', $license)
@@ -226,7 +226,7 @@ class LicenseController extends Controller
         $name = $license->name;
         $license->delete();
 
-        AuditLog::log('deleted', 'License', $license->id, ['name' => $name]);
+
 
         return redirect()
             ->route('licenses.index')

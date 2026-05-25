@@ -130,15 +130,18 @@ class XenditController extends Controller
                     'notes'            => $validated['notes'] ?? "Disbursement ke {$vendor->name} via Xendit",
                 ]);
 
-                AuditLog::log('xendit_disbursement_created', 'Payment', $payment->id, null, [
-                    'xendit_id'       => $xenditId,
-                    'external_id'     => $externalId,
-                    'vendor'          => $vendor->name,
-                    'bank_code'       => $vendor->bank_name,
-                    'account_number'  => $vendor->bank_account_number,
-                    'amount'          => $amount,
-                    'xendit_status'   => $xenditStatus,
-                ]);
+                activity()
+                    ->performedOn($payment)
+                    ->withProperties([
+                        'xendit_id'      => $xenditId,
+                        'external_id'    => $externalId,
+                        'vendor'         => $vendor->name,
+                        'bank_code'      => $vendor->bank_name,
+                        'account_number' => $vendor->bank_account_number,
+                        'amount'         => $amount,
+                        'xendit_status'  => $xenditStatus,
+                    ])
+                    ->log('xendit_disbursement_created');
 
                 return redirect()->route('payments.index')
                     ->with('success', "Proses transfer sedang berjalan. Reference: {$externalId}");
@@ -294,7 +297,7 @@ class XenditController extends Controller
             default     => $base->copy()->addYear(), // fallback aman
         };
 
-        $oldExpiry = $license->expiry_date?->toDateString();
+        $oldExpiry = $license->expiry_date;
 
         $license->update([
             'expiry_date' => $newExpiry->toDateString(),
@@ -304,13 +307,16 @@ class XenditController extends Controller
         Log::info('renewLicense: license renewed', [
             'license_id'    => $license->id,
             'billing_cycle' => $license->billing_cycle,
-            'old_expiry'    => $oldExpiry,
+            'old_expiry'    => $oldExpiry?->toDateString(),
             'new_expiry'    => $newExpiry->toDateString(),
         ]);
 
-        AuditLog::log('license_renewed', 'License', $license->id,
-            ['expiry_date' => $oldExpiry, 'status' => $license->getOriginal('status')],
-            ['expiry_date' => $newExpiry->toDateString(), 'status' => 'active']
-        );
+        activity()
+            ->performedOn($license)
+            ->withProperties([
+                'old'        => ['expiry_date' => $oldExpiry?->format('Y-m-d')],
+                'attributes' => ['expiry_date' => $newExpiry->format('Y-m-d'), 'reason' => 'Xendit Auto-Renew']
+            ])
+            ->log('license_renewed');
     }
 }

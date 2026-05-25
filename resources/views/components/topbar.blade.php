@@ -46,9 +46,8 @@
         {{-- USER DROPDOWN --}}
         <div x-data="dropdown" class="relative">
             <button @click="toggle()" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition" id="user-menu-button">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-                     style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
-                    {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center border-2 border-indigo-100 bg-gray-100 shrink-0">
+                    <img src="{{ auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name ?? 'A') . '&color=4f46e5&background=e0e7ff' }}" alt="Avatar" class="w-full h-full object-cover">
                 </div>
                 <span class="hidden md:block text-sm font-medium" style="color: var(--color-text-primary);">
                     {{ auth()->user()->name ?? 'Admin' }}

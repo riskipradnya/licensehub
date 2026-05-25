@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 #[Fillable([
     'name', 'vendor_id', 'category_id', 'type', 'serial_key',
@@ -15,7 +17,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class License extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     protected function casts(): array
     {
@@ -211,10 +221,13 @@ class License extends Model
             $this->save();
             
             // Log internal audit sistem
-            \App\Models\AuditLog::log('updated', 'License', $this->id, 
-                ['expiry_date' => $oldExpiry], 
-                ['expiry_date' => $this->expiry_date, 'reason' => 'Auto-renewal via payment/invoice']
-            );
+            activity()
+                ->performedOn($this)
+                ->withProperties([
+                    'old' => ['expiry_date' => $oldExpiry],
+                    'attributes' => ['expiry_date' => $this->expiry_date, 'reason' => 'Auto-renewal via payment/invoice']
+                ])
+                ->log('license_auto_renewed');
 
             // 🚀 OTOMATISASI EMAIL RESOLVED: Ambil penerima aktif dan kirim email sukses
             $recipients = \App\Models\NotificationRecipient::where('is_active', true)->get();

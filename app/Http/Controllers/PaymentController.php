@@ -63,7 +63,7 @@ class PaymentController extends Controller
 
         $payment = Payment::create($validated);
 
-        AuditLog::log('created', 'Payment', $payment->id, null, $validated);
+
 
         return redirect()
             ->route('payments.index')
@@ -82,10 +82,7 @@ class PaymentController extends Controller
         $oldStatus = $payment->status;
         $payment->approve(auth()->user());
 
-        AuditLog::log('approved', 'Payment', $payment->id,
-            ['status' => $oldStatus],
-            ['status' => 'approved', 'approved_by' => auth()->id()]
-        );
+
 
         return back()->with('success', "Payment untuk \"{$payment->license->name}\" berhasil diapprove.");
     }
@@ -105,12 +102,6 @@ class PaymentController extends Controller
         ]);
 
         $payment->update([
-            'status'           => 'paid',
-            'payment_method'   => $validated['payment_method'],
-            'reference_number' => $validated['reference_number'] ?? null,
-        ]);
-
-        AuditLog::log('paid', 'Payment', $payment->id, null, [
             'status'           => 'paid',
             'payment_method'   => $validated['payment_method'],
             'reference_number' => $validated['reference_number'] ?? null,
@@ -153,7 +144,7 @@ class PaymentController extends Controller
 
         $payment->update(['status' => 'rejected']);
 
-        AuditLog::log('rejected', 'Payment', $payment->id, null, ['status' => 'rejected']);
+
 
         return back()->with('success', "Payment berhasil ditolak.");
     }

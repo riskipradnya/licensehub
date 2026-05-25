@@ -18,21 +18,21 @@
 
         {{-- EMAIL --}}
         <div class="mb-4">
-            <label for="email" class="block text-sm font-medium text-white/80 mb-1.5">Email</label>
+            <label for="username" class="block text-sm font-medium text-white/80 mb-1.5">Username</label>
             <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2">
                     <svg class="w-4.5 h-4.5" style="color: #94a3b8;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
                     </svg>
                 </span>
-                <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus
-                       placeholder="nama@perusahaan.com"
+                <input type="text" id="username" name="username" value="{{ old('username') }}" required autofocus
+                       placeholder="admin"
                        class="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder-white/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
                        style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);"
                        onfocus="this.style.borderColor='rgba(99,102,241,0.6)'; this.style.background='rgba(255,255,255,0.12)'"
                        onblur="this.style.borderColor='rgba(255,255,255,0.12)'; this.style.background='rgba(255,255,255,0.08)'">
             </div>
-            @error('email')
+            @error('username')
                 <p class="mt-1 text-xs" style="color: #fca5a5;">{{ $message }}</p>
             @enderror
         </div>
@@ -67,16 +67,13 @@
             @enderror
         </div>
 
-        {{-- REMEMBER & FORGOT --}}
-        <div class="flex items-center justify-between mb-6">
+        {{-- REMEMBER --}}
+        <div class="flex items-center mb-6">
             <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="remember" id="remember"
                        class="w-4 h-4 rounded border-white/20 bg-white/10 text-indigo-500 focus:ring-indigo-400/50 focus:ring-offset-0">
                 <span class="text-sm text-white/70">Ingat saya</span>
             </label>
-            <a href="/forgot-password" class="text-sm font-medium transition hover:underline" style="color: #a5b4fc;">
-                Lupa Password?
-            </a>
         </div>
 
         {{-- SUBMIT --}}
@@ -94,8 +91,5 @@
         </button>
     </form>
 
-    <x-slot:footer>
-        Belum punya akun?
-        <a href="/register" class="font-semibold hover:underline transition" style="color: #a5b4fc;">Daftar di sini</a>
-    </x-slot:footer>
+
 </x-guest-layout>

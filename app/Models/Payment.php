@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 #[Fillable([
     'license_id', 'amount', 'payment_date', 'payment_method',
@@ -14,6 +16,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Payment extends Model
 {
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
     protected function casts(): array
     {
         return [
@@ -34,10 +45,13 @@ class Payment extends Model
             if ($invoice) {
                 $invoice->update(['status' => 'paid', 'payment_id' => $payment->id]);
                 
-                \App\Models\AuditLog::log('updated_status', 'Invoice', $invoice->id,
-                    ['status' => 'unpaid', 'payment_id' => null],
-                    ['status' => 'paid', 'payment_id' => $payment->id, 'reason' => 'Auto-synced from Payment Event']
-                );
+                activity()
+                    ->performedOn($invoice)
+                    ->withProperties([
+                        'old' => ['status' => 'unpaid', 'payment_id' => null],
+                        'attributes' => ['status' => 'paid', 'payment_id' => $payment->id, 'reason' => 'Auto-synced from Payment Event']
+                    ])
+                    ->log('updated_status');
             }
             
             // 3. Eksekusi perpanjangan lisensi dan perbarui notifikasi

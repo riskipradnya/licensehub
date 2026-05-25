@@ -86,7 +86,7 @@ class VendorController extends Controller
 
         $vendor = Vendor::create($validated);
 
-        AuditLog::log('created', 'Vendor', $vendor->id, null, $validated);
+
 
         return redirect()
             ->route('vendors.show', $vendor)
@@ -174,7 +174,7 @@ class VendorController extends Controller
 
         $vendor->update($validated);
 
-        AuditLog::log('updated', 'Vendor', $vendor->id, $oldValues, $validated);
+
 
         return redirect()
             ->route('vendors.show', $vendor)
@@ -192,7 +192,7 @@ class VendorController extends Controller
         $vendor->update(['is_active' => false]);
         $vendor->delete();
 
-        AuditLog::log('deleted', 'Vendor', $vendor->id, ['name' => $vendorName]);
+
 
         return redirect()
             ->route('vendors.index')

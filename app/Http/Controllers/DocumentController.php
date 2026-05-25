@@ -186,10 +186,13 @@ class DocumentController extends Controller
             'description' => $validated['description'],
         ]);
 
-        AuditLog::log('uploaded', 'Document', $document->id, null, [
-            'file_name'  => $document->file_name,
-            'license_id' => $document->license_id,
-        ]);
+        activity()
+            ->performedOn($document)
+            ->withProperties([
+                'file_name'  => $document->file_name,
+                'license_id' => $document->license_id,
+            ])
+            ->log('uploaded');
 
         return redirect()
             ->route('documents.index')
@@ -223,7 +226,10 @@ class DocumentController extends Controller
 
         $document->delete();
 
-        AuditLog::log('deleted', 'Document', $document->id, ['file_name' => $fileName]);
+        activity()
+            ->performedOn($document)
+            ->withProperties(['file_name' => $fileName])
+            ->log('deleted');
 
         return redirect()
             ->route('documents.index')
@@ -242,13 +248,17 @@ class DocumentController extends Controller
         }
 
         if ($vendor->{$field}) {
-            Storage::disk('public')->delete($vendor->{$field});
+            $oldFile = $vendor->{$field};
+            Storage::disk('public')->delete($oldFile);
             $vendor->update([$field => null]);
             
-            AuditLog::log('deleted', 'Vendor Document', $vendor->id, [
-                'field' => $field,
-                'vendor_name' => $vendor->name
-            ]);
+            activity()
+                ->performedOn($vendor)
+                ->withProperties([
+                    'field' => $field,
+                    'vendor_name' => $vendor->name
+                ])
+                ->log('deleted_vendor_document');
         }
 
         return redirect()
