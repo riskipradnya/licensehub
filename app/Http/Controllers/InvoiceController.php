@@ -111,11 +111,39 @@ class InvoiceController extends Controller
             'created_by'     => auth()->id(),
         ]);
 
-        // Auto-update master price of license unconditionally
+        // Auto-update master price and expiry date of license unconditionally
         $oldCost = $license->cost;
+        $oldExpiry = $license->expiry_date ? $license->expiry_date->format('Y-m-d') : null;
+
+        $updates = [];
+        $oldValues = [];
+        
         if ($oldCost != $validated['amount']) {
-            $license->update(['cost' => $validated['amount']]);
-            AuditLog::log('updated', 'License', $license->id, ['cost' => $oldCost], ['cost' => $validated['amount'], 'reason' => 'Auto-updated from invoice']);
+            $updates['cost'] = $validated['amount'];
+            $oldValues['cost'] = $oldCost;
+        }
+
+        if ($oldExpiry != $validated['due_date']) {
+            $updates['expiry_date'] = $validated['due_date'];
+            $oldValues['expiry_date'] = $oldExpiry;
+        }
+
+        if (!empty($updates)) {
+            $license->update($updates);
+            $updates['reason'] = 'Auto-updated from invoice';
+            AuditLog::log('updated', 'License', $license->id, $oldValues, $updates);
+        }
+
+        if ($filePath) {
+            \App\Models\Document::create([
+                'license_id'    => $invoice->license_id,
+                'uploaded_by'   => auth()->id(),
+                'file_name'     => $request->file('vendor_invoice_file')->getClientOriginalName(),
+                'file_path'     => $filePath,
+                'file_size'     => $request->file('vendor_invoice_file')->getSize(),
+                'document_type' => 'Invoice',
+                'description'   => 'Auto-attached Invoice: ' . $invoice->invoice_number,
+            ]);
         }
 
         AuditLog::log('created', 'Invoice', $invoice->id, null, [

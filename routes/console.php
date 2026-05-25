@@ -19,4 +19,4 @@ Artisan::command('inspire', function () {
 })->daily()->name('check-overdue-invoices');
 
 // Auto-check for expiring licenses and send notifications
-\Illuminate\Support\Facades\Schedule::command('app:check-expiring-licenses')->daily();
+\Illuminate\Support\Facades\Schedule::command('app:send-license-alerts')->everyMinute();

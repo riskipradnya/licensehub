@@ -116,6 +116,29 @@ class PaymentController extends Controller
             'reference_number' => $validated['reference_number'] ?? null,
         ]);
 
+        // Generate PDF Receipt and save to Documents
+        try {
+            $payment->load(['license.vendor', 'license.category']);
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('finance.receipt_pdf', compact('payment'));
+            
+            $fileName = 'receipt_' . ($payment->reference_number ?? $payment->id) . '_' . time() . '.pdf';
+            $filePath = 'payments/receipts/' . $fileName;
+            
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filePath, $pdf->output());
+
+            \App\Models\Document::create([
+                'license_id'    => $payment->license_id,
+                'uploaded_by'   => auth()->id(),
+                'file_name'     => $fileName,
+                'file_path'     => $filePath,
+                'file_size'     => \Illuminate\Support\Facades\Storage::disk('public')->size($filePath),
+                'document_type' => 'Receipt',
+                'description'   => 'Auto-generated Receipt: ' . ($payment->reference_number ?? $payment->id),
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to generate/save receipt PDF: ' . $e->getMessage());
+        }
+
         return back()->with('success', "Payment berhasil dikonfirmasi sebagai Paid.");
     }
 

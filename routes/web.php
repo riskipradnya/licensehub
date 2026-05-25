@@ -9,6 +9,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\XenditController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,11 +43,19 @@ Route::middleware('auth')->group(function () {
     // === Dashboard ===
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // ==========================================================
+    // === URUTAN MUTLAK: Categories HARUS di atas Licenses! ====
+    // ==========================================================
+    Route::prefix('licenses')->name('licenses.')->group(function () {
+        Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
+    });
+
     // === Licenses (IT & Finance can view, IT can manage) ===
     Route::resource('licenses', LicenseController::class);
 
     // === Vendors ===
     Route::resource('vendors', VendorController::class);
+    // (Tanda kurung kurawal nyasar di sini sudah dihapus!)
 
     // === Documents ===
     Route::delete('/documents/vendor/{vendor}/{field}', [DocumentController::class, 'destroyVendorDoc'])->name('documents.destroyVendorDoc');
@@ -66,6 +75,7 @@ Route::middleware('auth')->group(function () {
 
     // === Xendit Disbursement ===
     Route::post('/xendit/disburse', [XenditController::class, 'createDisbursement'])->name('xendit.disburse');
+    
     // === Finance (restricted to finance roles) ===
     Route::middleware('role:finance_manager,finance_staff')->group(function () {
         // Payments
@@ -76,8 +86,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.markPaid');
         Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
-
-
 
         // Invoices
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
@@ -99,22 +107,41 @@ Route::middleware('auth')->group(function () {
         Route::resource('notification-settings', App\Http\Controllers\NotificationSettingController::class)
             ->only(['index', 'store', 'update', 'destroy']);
     });
-});
+}); // <--- INI ADALAH PENUTUP MIDDLEWARE AUTH YANG SEBENARNYA!
+
+// ══════════════════════════════════════════════════════════════
+//  TESTING & AUTOMATION ROUTES
+// ══════════════════════════════════════════════════════════════
 
 Route::get('/test-email-blast', function () {
     try {
-        // Ambil 1 lisensi yang berstatus 'expired' atau 'expiring' untuk disimulasikan perpanjangannya
         $license = \App\Models\License::whereIn('status', ['expired', 'expiring'])->first();
         
         if (!$license) {
             return 'GAGAL SIMULASI! Tidak ada lisensi expired/expiring di database untuk diperpanjang.';
         }
 
-        // Panggil fungsi perpanjangan tanggal. Fungsi ini sekarang otomatis memicu pengiriman email!
         $license->renewExpiryDate();
         
         return 'SUKSES! Fungsi renewExpiryDate() dijalankan, tanggal diperpanjang, dan email RESOLVED masuk antrean.';
     } catch (\Exception $e) {
         return 'GAGAL! Error: ' . $e->getMessage();
     }
+});
+
+
+Route::get('/auto-set-dates', function () {
+    $licenses = \App\Models\License::where('type', '!=', 'Perpetual')->take(5)->get();
+
+    if ($licenses->count() < 5) {
+        return "Anda butuh minimal 5 data lisensi Subscription/Berjangka di database untuk tes ini!";
+    }
+
+    $licenses[0]->update(['expiry_date' => '2026-06-26', 'status' => 'active']);
+    $licenses[1]->update(['expiry_date' => '2026-06-09', 'status' => 'active']);
+    $licenses[2]->update(['expiry_date' => '2026-06-02', 'status' => 'active']);
+    $licenses[3]->update(['expiry_date' => '2026-05-25', 'status' => 'active']);
+    $licenses[4]->update(['expiry_date' => '2026-05-22', 'status' => 'active']);
+
+    return "✅ SUPER MANTAP! 5 Lisensi NON-PERPETUAL telah otomatis diatur untuk dieksekusi Robot.";
 });
