@@ -83,7 +83,7 @@
                         <label for="cost" class="form-label">Cost (Rp) <span style="color: var(--color-status-danger);">*</span></label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color: var(--color-text-secondary);">Rp</span>
-                            <input type="number" id="cost" name="cost" class="form-input pl-10 @error('cost') border-red-500 @enderror" placeholder="0" value="{{ old('cost') }}" required min="0">
+                            <input type="number" id="cost" name="cost" class="form-input !pl-10 @error('cost') border-red-500 @enderror" placeholder="0" value="{{ old('cost') }}" required min="0">
                         </div>
                         @error('cost') <p class="form-error">{{ $message }}</p> @enderror
                     </div>

@@ -158,8 +158,9 @@
             </div>
             <div class="flex gap-3">
                 <a href="{{ route('licenses.show', $license) }}" class="btn btn-secondary">Cancel</a>
-                <button type="submit" form="edit-license-form" class="btn btn-primary" :disabled="loading">
-                    <span x-text="loading ? 'Saving...' : '💾 Update License'">💾 Update License</span>
+                <button type="submit" form="edit-license-form" class="btn btn-primary px-4 py-2 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>Simpan Perubahan</span>
                 </button>
             </div>
         </div>

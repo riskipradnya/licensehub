@@ -51,30 +51,30 @@
     <!-- Data Table -->
     <div class="card p-0 overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="data-table">
+            <table class="data-table w-full">
                 <thead>
                     <tr>
-                        <th class="w-16 text-center">No</th>
-                        <th>Nama Kategori</th>
-                        <th>Deskripsi</th>
-                        <th class="text-center">Total Lisensi</th>
-                        <th class="text-center">Aksi</th>
+                        <th class="px-4 py-2.5 w-16 text-center">No</th>
+                        <th class="px-4 py-2.5 w-64">Nama Kategori</th>
+                        <th class="px-4 py-2.5 w-auto">Deskripsi</th>
+                        <th class="px-4 py-2.5 w-36 text-center">Total Lisensi</th>
+                        <th class="px-4 py-2.5 w-48 !text-center" style="text-align: center !important;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($categories as $index => $category)
                         <tr>
-                            <td class="text-center">{{ $index + 1 }}</td>
-                            <td class="font-medium text-gray-900">{{ $category->name }}</td>
-                            <td class="text-gray-600 truncate max-w-xs" title="{{ $category->description }}">
+                            <td class="px-4 py-3 text-center">{{ $index + 1 }}</td>
+                            <td class="px-4 py-3 font-medium whitespace-nowrap" style="color: var(--color-text-primary);">{{ $category->name }}</td>
+                            <td class="px-4 py-3 truncate" style="color: var(--color-text-secondary);" title="{{ $category->description }}">
                                 {{ $category->description ?? '-' }}
                             </td>
-                            <td class="text-center">
-                                <span class="badge badge--info px-3 py-1 text-sm font-semibold rounded-full">
+                            <td class="px-4 py-3 text-center align-middle">
+                                <span class="badge badge--info px-3 py-1 text-sm font-semibold rounded-full inline-block">
                                     {{ $category->licenses_count }}
                                 </span>
                             </td>
-                            <td>
+                            <td class="px-4 py-3 text-center align-middle">
                                 <div class="flex items-center justify-center gap-2">
                                     <!-- Edit Button (Alpine Modal Trigger) -->
                                     <button 
@@ -98,7 +98,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-8 text-gray-500 font-medium">Belum ada data kategori.</td>
+                            <td colspan="5" class="px-4 py-8 text-center font-medium" style="color: var(--color-text-secondary);">Belum ada data kategori.</td>
                         </tr>
                     @endforelse
                 </tbody>
