@@ -32,7 +32,7 @@
                     <option value="Vendor Logo" @selected(request('type') === 'Vendor Logo')>Vendor Logo</option>
                     <option value="Vendor MSA" @selected(request('type') === 'Vendor MSA')>Vendor MSA</option>
                     <option value="Vendor SLA" @selected(request('type') === 'Vendor SLA')>Vendor SLA</option>
-                </optgroup>
+                </optgroup>1
             </select>
             </div>
             <div class="md:col-span-1">

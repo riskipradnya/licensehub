@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\License;
 use App\Models\Payment;
 use App\Models\Vendor;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     /**
      * Display the main dashboard with real aggregate data.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
         // ── Stat Cards ──────────────────────────────────────────
         $activeLicenses  = License::where('status', 'active')->count();
@@ -20,11 +22,10 @@ class DashboardController extends Controller
         $expiredLicenses = License::where('status', 'expired')->count();
         $totalMonthlyCost = (float) License::whereIn('status', ['active', 'expiring'])->sum('cost');
 
-        // ── Expiring Soon Table (licenses expiring within 60 days) ──
+        // ── Expiring Soon Table (licenses expiring within 31 days) ──
         $expiringLicenses = License::with(['vendor', 'category'])
             ->whereNotNull('expiry_date')
-            ->where('expiry_date', '>=', now())
-            ->where('expiry_date', '<=', now()->addDays(60))
+            ->whereBetween('expiry_date', [now(), now()->addDays(31)])
             ->orderBy('expiry_date')
             ->limit(10)
             ->get();
@@ -49,24 +50,40 @@ class DashboardController extends Controller
                 ];
             });
 
-        // ── Chart Data (monthly cost for last 6 months) ─────────
+        // ── Chart Data (Historical Cost Trend) ─────────
+        $filter = $request->query('filter', '6_months');
+        
+        $monthsToSub = match($filter) {
+            '1_month'   => 1,
+            '12_months' => 12,
+            default     => 6,
+        };
+
+        $startDate = now()->subMonths($monthsToSub)->startOfMonth();
+        $endDate = now()->endOfMonth();
+
+        // Ambil data dari database yang expired di rentang waktu tersebut
+        $licensesInPeriod = License::whereNotNull('expiry_date')
+            ->whereBetween('expiry_date', [$startDate, $endDate])
+            ->get();
+
         $chartLabels = [];
-        $chartData   = [];
+        $chartValues = [];
 
-        for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $chartLabels[] = $month->format('M');
+        // Buat urutan bulan secara berurutan (chronological) dari terlama ke terbaru
+        for ($i = $monthsToSub - 1; $i >= 0; $i--) {
+            $monthObj = now()->subMonths($i);
+            $label = $monthObj->format('M Y'); // e.g. 'Jan 2026'
+            
+            $chartLabels[] = $label;
+            
+            // Cari total cost untuk bulan dan tahun ini
+            $monthlyTotal = $licensesInPeriod->filter(function($lic) use ($monthObj) {
+                return Carbon::parse($lic->expiry_date)->format('Y-m') === $monthObj->format('Y-m');
+            })->sum('cost');
 
-            // Sum cost of licenses active during that month
-            $monthlyCost = License::whereIn('status', ['active', 'expiring', 'expired'])
-                ->where('start_date', '<=', $month->endOfMonth())
-                ->where(function ($q) use ($month) {
-                    $q->whereNull('expiry_date')
-                      ->orWhere('expiry_date', '>=', $month->startOfMonth());
-                })
-                ->sum('cost');
-
-            $chartData[] = round((float) $monthlyCost / 1000000, 1); // In millions
+            // Format ke dalam jutaan jika angkanya besar, tapi sementara keep raw value biar view mudah
+            $chartValues[] = (float) $monthlyTotal;
         }
 
         return view('dashboard.index', compact(
@@ -77,7 +94,8 @@ class DashboardController extends Controller
             'expiringLicenses',
             'alerts',
             'chartLabels',
-            'chartData',
+            'chartValues',
+            'filter'
         ));
     }
 }

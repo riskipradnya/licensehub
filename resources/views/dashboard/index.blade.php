@@ -13,10 +13,16 @@
         {{-- LINE CHART (2/3 width) --}}
         <div class="lg:col-span-2 card">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-semibold" style="color: var(--color-text-primary);">License Cost Trend</h3>
-                <span class="text-xs px-3 py-1.5 rounded-md" style="background: var(--color-content-bg); color: var(--color-text-secondary);">6 Bulan Terakhir</span>
+                <h3 class="text-base font-semibold" style="color: var(--color-text-primary);">Tren Biaya Lisensi</h3>
+                <select onchange="window.location.href='?filter='+this.value" class="form-select text-xs py-1.5 pl-3 pr-8 rounded-md border-gray-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" style="background: var(--color-content-bg); color: var(--color-text-primary);">
+                    <option value="1_month" {{ $filter === '1_month' ? 'selected' : '' }}>1 Bulan Terakhir</option>
+                    <option value="6_months" {{ $filter === '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                    <option value="12_months" {{ $filter === '12_months' ? 'selected' : '' }}>1 Tahun Terakhir</option>
+                </select>
             </div>
-            <canvas id="costTrendChart" height="260"></canvas>
+            <div class="relative w-full h-80 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/50 rounded-xl p-4 shadow-sm">
+                <canvas id="trendChart"></canvas>
+            </div>
         </div>
 
         {{-- ALERT FEED (1/3 width) --}}
@@ -100,19 +106,20 @@
     </div>
 
 @push('scripts')
-<script type="module">
-    import Chart from 'chart.js/auto';
-
-    const ctx = document.getElementById('costTrendChart');
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('trendChart');
     if (ctx) {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        new Chart(ctx, {
+        let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        
+        const chart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: @json($chartLabels),
                 datasets: [{
-                    label: 'Biaya Lisensi (Juta Rp)',
-                    data: @json($chartData),
+                    label: 'Biaya Lisensi (Rp)',
+                    data: @json($chartValues),
                     borderColor: '#6366f1',
                     backgroundColor: 'rgba(99, 102, 241, 0.1)',
                     fill: true,
@@ -131,23 +138,53 @@
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (ctx) => 'Rp ' + ctx.parsed.y.toFixed(1) + ' Juta'
+                            label: (ctx) => 'Rp ' + new Intl.NumberFormat('id-ID').format(ctx.parsed.y)
                         }
                     }
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } },
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { 
+                            font: { family: 'Inter', size: 11 },
+                            color: isDark ? '#94a3b8' : '#64748b'
+                        } 
+                    },
                     y: {
                         grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
                         ticks: {
+                            color: isDark ? '#94a3b8' : '#64748b',
                             font: { family: 'Inter', size: 11 },
-                            callback: (v) => 'Rp ' + v + 'M'
+                            callback: (v) => {
+                                if (v >= 1000000) return 'Rp ' + (v / 1000000) + ' Juta';
+                                if (v >= 1000) return 'Rp ' + (v / 1000) + ' Ribu';
+                                return 'Rp ' + v;
+                            }
                         }
                     },
                 },
             }
         });
+
+        // MutationObserver to sync Chart.js colors with Tailwind Dark Mode toggle
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'data-theme' || mutation.attributeName === 'class') {
+                    isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.documentElement.classList.contains('dark');
+                    
+                    // Update Chart colors
+                    chart.options.scales.x.ticks.color = isDark ? '#94a3b8' : '#64748b';
+                    chart.options.scales.y.ticks.color = isDark ? '#94a3b8' : '#64748b';
+                    chart.options.scales.y.grid.color = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                    
+                    chart.update();
+                }
+            });
+        });
+
+        observer.observe(document.documentElement, { attributes: true });
     }
+});
 </script>
 @endpush
 

@@ -11,9 +11,19 @@ Alpine.store('darkMode', {
         this.on = !this.on;
         localStorage.setItem('darkMode', this.on);
         document.documentElement.setAttribute('data-theme', this.on ? 'dark' : 'light');
+        if (this.on) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
     },
     init() {
         document.documentElement.setAttribute('data-theme', this.on ? 'dark' : 'light');
+        if (this.on) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
     }
 });
 

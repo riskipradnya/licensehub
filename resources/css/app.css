@@ -1,10 +1,12 @@
-@import 'tailwindcss';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* ===== DESIGN SYSTEM TOKENS ===== */
 @theme {
@@ -198,15 +200,13 @@ body {
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }
 .btn-secondary {
-    background-color: var(--color-card-bg);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border);
+    @apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 dark:bg-[#1E293B] dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white transition-colors duration-200;
 }
-.btn-secondary:hover { background-color: #f1f5f9; }
 .btn-danger { background-color: var(--color-status-danger); color: #fff; }
 .btn-danger:hover { background-color: #dc2626; }
-.btn-ghost { background: transparent; color: var(--color-text-secondary); }
-.btn-ghost:hover { background-color: #f1f5f9; color: var(--color-text-primary); }
+.btn-ghost {
+    @apply inline-flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors duration-200 rounded-lg;
+}
 
 /* ===== FORM CONTROLS ===== */
 .form-input {
@@ -402,3 +402,5 @@ body {
 @media (max-width: 767px) {
     .stat-cards-grid { grid-template-columns: 1fr !important; }
 }
+
+

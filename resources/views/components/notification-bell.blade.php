@@ -2,7 +2,7 @@
 @php $count = auth()->user()->unreadNotifications->count(); @endphp
 
 <div x-data="dropdown" class="relative notification-bell" id="notification-bell">
-    <button @click="toggle()" class="btn-ghost p-2 rounded-lg relative">
+    <button @click="toggle()" class="text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white p-2 rounded-lg relative transition-colors">
         <svg class="w-5 h-5" style="color: var(--color-text-secondary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>

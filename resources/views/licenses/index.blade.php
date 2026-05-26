@@ -14,26 +14,30 @@
 
     {{-- FILTER BAR --}}
     <div class="card mb-6">
-        <form method="GET" action="{{ route('licenses.index') }}" class="flex flex-col md:flex-row gap-3" id="license-filter-form">
-            <div class="relative flex-1">
+        <form method="GET" action="{{ route('licenses.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 w-full" id="license-filter-form">
+            <div class="relative md:col-span-2">
                 <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--color-text-secondary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama lisensi, vendor..." class="form-input pl-10" id="license-search">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama lisensi, vendor..." class="form-input w-full !pl-10" id="license-search">
             </div>
-            <select name="category" class="form-input w-full md:w-48" id="filter-category" onchange="this.form.submit()">
-                <option value="">All Categories</option>
-                @foreach($categories as $cat)
-                    <option value="{{ $cat->id }}" @selected(request('category') == $cat->id)>{{ $cat->name }}</option>
-                @endforeach
-            </select>
-            <select name="status" class="form-input w-full md:w-40" id="filter-status" onchange="this.form.submit()">
-                <option value="">All Status</option>
-                <option value="active" @selected(request('status') === 'active')>Active</option>
-                <option value="expiring" @selected(request('status') === 'expiring')>Expiring Soon</option>
-                <option value="expired" @selected(request('status') === 'expired')>Expired</option>
-                <option value="cancelled" @selected(request('status') === 'cancelled')>Cancelled</option>
-            </select>
+            <div class="md:col-span-1">
+                <select name="category" class="form-input w-full" id="filter-category" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" @selected(request('category') == $cat->id)>{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="md:col-span-1">
+                <select name="status" class="form-input w-full" id="filter-status" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="active" @selected(request('status') === 'active')>Active</option>
+                    <option value="expiring" @selected(request('status') === 'expiring')>Expiring Soon</option>
+                    <option value="expired" @selected(request('status') === 'expired')>Expired</option>
+                    <option value="cancelled" @selected(request('status') === 'cancelled')>Cancelled</option>
+                </select>
+            </div>
         </form>
     </div>
 
@@ -61,7 +65,7 @@
                         <td class="font-medium">{{ $license->name }}</td>
                         <td>{{ $license->vendor->name ?? '—' }}</td>
                         <td>
-                            <span class="text-xs px-2 py-0.5 rounded-md"
+                            <span class="w-32 inline-block text-center truncate text-xs px-2 py-1 rounded-md"
                                   style="background: var(--color-status-{{ $license->category_color }}-bg); color: var(--color-status-{{ $license->category_color }});">
                                 {{ $license->category->name ?? '—' }}
                             </span>

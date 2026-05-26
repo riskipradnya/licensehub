@@ -26,7 +26,7 @@
         </div>
 
         {{-- DARK MODE TOGGLE --}}
-        <button @click="$store.darkMode.toggle()" class="btn-ghost p-2 rounded-lg" id="dark-mode-toggle"
+        <button @click="$store.darkMode.toggle()" class="text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white p-2 rounded-lg transition-colors" id="dark-mode-toggle"
                 title="Toggle Dark Mode">
             {{-- Sun icon --}}
             <svg x-show="$store.darkMode.on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
