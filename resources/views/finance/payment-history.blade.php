@@ -1,12 +1,58 @@
 <x-app-layout title="Payment History" :breadcrumbs="[['label' => 'Finance', 'url' => '#'], ['label' => 'Payment History']]">
 
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-            <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">Payment History</h2>
-            <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Riwayat seluruh pembayaran lisensi</p>
+    <div x-data="{ showExportModal: false }">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+                <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">Payment History</h2>
+                <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Riwayat seluruh pembayaran lisensi</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <button @click="showExportModal = true" class="btn px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 rounded-lg text-sm font-semibold transition-colors border border-indigo-200 dark:border-indigo-800 flex items-center gap-2">
+                    📥 Export Data
+                </button>
+                <a href="{{ route('payments.index') }}" class="btn btn-secondary text-sm">← Back to Payments</a>
+            </div>
         </div>
-        <a href="{{ route('payments.index') }}" class="btn btn-secondary text-sm">← Back to Payments</a>
-    </div>
+
+        {{-- Export Modal --}}
+        <div x-show="showExportModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0" style="display: none;" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
+            <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showExportModal = false" x-transition.opacity></div>
+            
+            <div class="relative z-10 w-full max-w-lg bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl overflow-hidden" @click.stop x-transition.scale.origin.bottom>
+                <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
+                    <h3 class="text-lg leading-6 font-bold text-gray-900 dark:text-white" id="modal-title">Export Payment History</h3>
+                </div>
+                
+                <div class="px-6 py-5">
+                    <form id="exportForm" method="GET" action="{{ route('payments.export') }}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                                <input type="date" name="start_date" class="form-input w-full rounded-lg bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                                <input type="date" name="end_date" class="form-input w-full rounded-lg bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="format" id="exportFormat" value="pdf">
+                        
+                        <div class="flex flex-col sm:flex-row gap-3 justify-end pt-2">
+                            <button type="button" @click="showExportModal = false" class="btn px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-transparent rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                Cancel
+                            </button>
+                            <button type="button" onclick="document.getElementById('exportFormat').value='pdf'; document.getElementById('exportForm').submit();" class="btn px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-sm flex items-center justify-center gap-2 transition-colors">
+                                📄 Export PDF
+                            </button>
+                            <button type="button" onclick="document.getElementById('exportFormat').value='excel'; document.getElementById('exportForm').submit();" class="btn px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-sm flex items-center justify-center gap-2 transition-colors">
+                                📊 Export Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
     {{-- FILTERS --}}
     <div class="card mb-6">
@@ -69,6 +115,7 @@
             <div>{{ $payments->links('pagination::tailwind') }}</div>
         </div>
         @endif
+    </div>
     </div>
 
 </x-app-layout>

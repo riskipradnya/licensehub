@@ -155,6 +155,7 @@ class DocumentController extends Controller
         return view('documents.index', compact('documents', 'uploaders', 'sortColumn', 'sortDirection'));
     }
 
+
     /**
      * Store a newly uploaded document.
      */

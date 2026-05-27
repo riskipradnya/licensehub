@@ -171,6 +171,35 @@ class PaymentController extends Controller
     }
 
     /**
+     * Export Payment History to PDF or Excel.
+     */
+    public function export(Request $request)
+    {
+        $query = Payment::with(['license.vendor'])
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = $request->start_date . ' 00:00:00';
+            $endDate = $request->end_date . ' 23:59:59';
+            
+            $query->where(function($q) use ($startDate, $endDate) {
+                $q->whereBetween('payment_date', [$startDate, $endDate])
+                  ->orWhereBetween('created_at', [$startDate, $endDate]);
+            });
+        }
+
+        $payments = $query->get();
+
+        if ($request->format === 'excel') {
+            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PaymentsExport($payments), 'payment-history.xlsx');
+        }
+
+        // Default to PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.payments-pdf', compact('payments'));
+        return $pdf->download('payment-history.pdf');
+    }
+
+    /**
      * Download Payment Receipt as PDF.
      */
     public function downloadReceipt(Payment $payment)

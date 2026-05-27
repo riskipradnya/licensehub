@@ -8,16 +8,47 @@
                 <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Proyeksi Biaya (Cost Projection)</h1>
                 <p class="text-sm mt-1 text-slate-500 dark:text-slate-400">Pantau perkiraan biaya perpanjangan lisensi IT di masa depan.</p>
             </div>
-            
-            <!-- Filter Dropdown -->
-            <div class="flex items-center gap-3">
-                <label for="monthsFilter" class="text-sm font-medium text-slate-400">Periode:</label>
-                <select id="monthsFilter" onchange="window.location.href='?months='+this.value" 
-                        class="bg-[#1E293B] text-slate-200 text-sm py-2 pl-4 pr-10 rounded-lg shadow-sm border border-slate-700/50 focus:ring-primary focus:border-primary outline-none transition-all">
-                    <option value="3" {{ $months == 3 ? 'selected' : '' }}>3 Bulan ke Depan</option>
-                    <option value="6" {{ $months == 6 ? 'selected' : '' }}>6 Bulan ke Depan</option>
-                    <option value="12" {{ $months == 12 ? 'selected' : '' }}>1 Tahun ke Depan</option>
-                </select>
+            <div class="flex flex-col xl:flex-row items-center gap-3 w-full sm:w-auto">
+                <!-- Hybrid Filter Form -->
+                <form x-data="{ filterType: '{{ $periode }}' }" method="GET" action="{{ route('cost-projection.index') }}" class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <div class="flex items-center gap-2">
+                        <label for="periodeFilter" class="hidden md:block text-sm font-medium text-slate-500 dark:text-slate-400">Periode:</label>
+                        <select name="periode" id="periodeFilter" x-model="filterType" class="bg-white dark:bg-[#1E293B] text-slate-900 dark:text-slate-200 text-sm py-2 pl-4 pr-10 rounded-lg shadow-sm border border-slate-300 dark:border-slate-700 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                            <option value="3">3 Bulan</option>
+                            <option value="6">6 Bulan</option>
+                            <option value="12">1 Tahun</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    <div x-show="filterType === 'custom'" x-cloak class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                        <input type="date" name="start_date" value="{{ request('start_date', $startDate->format('Y-m-d')) }}" class="w-full sm:w-auto bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 px-3 py-2 outline-none transition-all">
+                        <span class="text-slate-500 dark:text-slate-400 font-medium text-sm">to</span>
+                        <input type="date" name="end_date" value="{{ request('end_date', $endDate->format('Y-m-d')) }}" class="w-full sm:w-auto bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 px-3 py-2 outline-none transition-all">
+                    </div>
+
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors flex items-center gap-1.5 w-full sm:w-auto justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Filter
+                    </button>
+                </form>
+
+                <!-- Export Dropdown -->
+                <div x-data="{ openExport: false }" class="relative w-full sm:w-auto">
+                    <button @click="openExport = !openExport" @click.away="openExport = false" class="bg-slate-100 hover:bg-slate-200 dark:bg-[#1E293B] dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-semibold py-2 px-4 rounded-lg shadow-sm border border-slate-300 dark:border-slate-700 transition-colors flex items-center justify-between gap-2 w-full">
+                        <span class="flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Export Data</span>
+                        <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openExport }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    
+                    <div x-show="openExport" x-transition.opacity x-cloak class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden z-50">
+                        <a href="{{ route('cost-projection.export', array_merge(request()->query(), ['format' => 'pdf'])) }}" class="block px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-2">
+                            📄 Export PDF
+                        </a>
+                        <a href="{{ route('cost-projection.export', array_merge(request()->query(), ['format' => 'excel'])) }}" class="block px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-2 border-t border-slate-100 dark:border-slate-700/50">
+                            📊 Export Excel
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -133,7 +164,7 @@
                                     <div class="flex flex-col items-center justify-center text-slate-500">
                                         <svg class="w-16 h-16 mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                         <p class="font-medium text-lg text-slate-300">Tidak ada lisensi yang jatuh tempo</p>
-                                        <p class="text-sm mt-1">Dalam rentang waktu {{ $months }} bulan ke depan.</p>
+                                        <p class="text-sm mt-1">Dalam rentang {{ $startDate->format('d M Y') }} - {{ $endDate->format('d M Y') }}</p>
                                     </div>
                                 </td>
                             </tr>

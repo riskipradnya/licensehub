@@ -5,10 +5,10 @@
             <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">Document Center</h2>
             <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Semua dokumen kontrak, invoice, dan sertifikat lisensi</p>
         </div>
-        <button class="btn btn-primary" @click="$dispatch('open-modal-upload-doc')" id="upload-doc-btn">
+        <!-- <button class="btn btn-primary" @click="$dispatch('open-modal-upload-doc')" id="upload-doc-btn">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
             Upload Document
-        </button>
+        </button> -->
     </div>
 
     {{-- FILTER --}}

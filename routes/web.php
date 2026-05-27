@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
     Route::get('/cost-projection', [CostProjectionController::class, 'index'])->name('cost-projection.index');
+    Route::get('/cost-projection/export', [CostProjectionController::class, 'export'])->name('cost-projection.export');
 
     Route::middleware('role:super_admin,finance_manager')->group(function () {
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
@@ -86,6 +87,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
         Route::post('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.markPaid');
         Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+        Route::get('/payments/export', [PaymentController::class, 'export'])->name('payments.export');
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
 
         // Invoices

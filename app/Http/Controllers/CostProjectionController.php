@@ -13,14 +13,20 @@ class CostProjectionController extends Controller
      */
     public function index(Request $request): View
     {
-        // Validasi input bulan (default 6 bulan)
-        $months = (int) $request->input('months', 6);
-        if (!in_array($months, [3, 6, 12])) {
-            $months = 6;
-        }
+        $periode = $request->input('periode', '3');
 
-        $startDate = now();
-        $endDate = now()->addMonths($months);
+        if ($periode === 'custom') {
+            $startDate = \Carbon\Carbon::parse($request->input('start_date', now()))->startOfDay();
+            $endDate = \Carbon\Carbon::parse($request->input('end_date', now()->addMonths(3)))->endOfDay();
+        } else {
+            $months = (int) $periode;
+            if (!in_array($months, [3, 6, 12])) {
+                $months = 3;
+                $periode = '3';
+            }
+            $startDate = now()->startOfDay();
+            $endDate = now()->addMonths($months)->endOfDay();
+        }
 
         $baseQuery = License::with('vendor')
             ->where('type', '!=', 'Perpetual')
@@ -30,7 +36,6 @@ class CostProjectionController extends Controller
         $totalProjectedCost = (clone $baseQuery)->sum('cost');
         $grandTotal = $totalProjectedCost; // Alias sesuai permintaan
         $licensesDue = (clone $baseQuery)->count();
-        $avgMonthlyCost = $months > 0 ? $totalProjectedCost / $months : 0;
 
         // Kueri terpisah untuk daftar terpaginasi
         $expiringLicenses = (clone $baseQuery)
@@ -43,8 +48,10 @@ class CostProjectionController extends Controller
 
         // Persiapan Data Chart.js (Grouping by Month-Year)
         $monthlyCosts = [];
-        $currentDate = $startDate->copy();
-        for ($i = 0; $i < $months; $i++) {
+        $currentDate = $startDate->copy()->startOfMonth();
+        $endMonth = $endDate->copy()->startOfMonth();
+        
+        while ($currentDate <= $endMonth) {
             $monthKey = $currentDate->format('M Y');
             $monthlyCosts[$monthKey] = 0;
             $currentDate->addMonth();
@@ -54,17 +61,20 @@ class CostProjectionController extends Controller
             $monthKey = $license->expiry_date->format('M Y');
             if (isset($monthlyCosts[$monthKey])) {
                 $monthlyCosts[$monthKey] += $license->cost;
-            } else {
-                $monthlyCosts[$monthKey] = (float) $license->cost;
             }
         }
+
+        $totalMonths = max(1, count($monthlyCosts));
+        $avgMonthlyCost = $totalProjectedCost / $totalMonths;
 
         $chartLabels = array_keys($monthlyCosts);
         $chartValues = array_values($monthlyCosts);
 
         return view('monitoring.cost-projection', compact(
             'expiringLicenses',
-            'months',
+            'periode',
+            'startDate',
+            'endDate',
             'totalProjectedCost',
             'grandTotal',
             'licensesDue',
@@ -72,5 +82,40 @@ class CostProjectionController extends Controller
             'chartLabels',
             'chartValues'
         ));
+    }
+
+    /**
+     * Export the cost projection data.
+     */
+    public function export(Request $request)
+    {
+        $periode = $request->input('periode', '3');
+
+        if ($periode === 'custom') {
+            $startDate = \Carbon\Carbon::parse($request->input('start_date', now()))->startOfDay();
+            $endDate = \Carbon\Carbon::parse($request->input('end_date', now()->addMonths(3)))->endOfDay();
+        } else {
+            $months = (int) $periode;
+            if (!in_array($months, [3, 6, 12])) {
+                $months = 3;
+            }
+            $startDate = now()->startOfDay();
+            $endDate = now()->addMonths($months)->endOfDay();
+        }
+
+        $licenses = License::with('vendor')
+            ->where('type', '!=', 'Perpetual')
+            ->whereBetween('expiry_date', [$startDate, $endDate])
+            ->orderBy('expiry_date', 'asc')
+            ->get();
+
+        if ($request->format === 'excel') {
+            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\CostProjectionExport($licenses, $startDate, $endDate), 'cost-projection.xlsx');
+        }
+
+        // Default to PDF
+        $isExcel = false;
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.cost-projection-pdf', compact('licenses', 'startDate', 'endDate', 'isExcel'));
+        return $pdf->download('cost-projection.pdf');
     }
 }
