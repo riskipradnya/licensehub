@@ -12,7 +12,7 @@
     <div class="card p-0 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="data-table">
-                <thead><tr><th>License</th><th>Vendor</th><th>Expiry Date</th><th>Cost</th><th>Status</th><th class="text-center">Action</th></tr></thead>
+                <thead><tr><th>License</th><th>Vendor</th><th>Expiry Date</th><th class="text-center"><div class="flex justify-center w-full">Cost</div></th><th class="text-center"><div class="flex justify-center w-full">Status</div></th><th class="text-center"><div class="flex justify-center w-full">Action</div></th></tr></thead>
                 <tbody>
                     @forelse($licenses as $license)
                     <tr>
@@ -32,10 +32,16 @@
                                 —
                             @endif
                         </td>
-                        <td class="font-semibold">{{ $license->formatted_cost }}</td>
-                        <td><x-status-badge :status="$license->status" size="sm" /></td>
+                        <td class="text-center font-semibold">{{ $license->formatted_cost }}</td>
                         <td class="text-center">
-                            <a href="{{ route('payments.renew', $license->id) }}" class="btn btn-primary text-xs py-1 px-3">💳 Pay Now</a>
+                            <div class="flex justify-center w-full">
+                                <x-status-badge :status="$license->status" size="sm" />
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="flex justify-center items-center gap-2">
+                                <a href="{{ route('payments.renew', $license->id) }}" class="btn btn-primary text-xs py-1 px-3">💳 Pay Now</a>
+                            </div>
                         </td>
                     </tr>
                     @empty

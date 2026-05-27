@@ -22,23 +22,27 @@ class CostProjectionController extends Controller
         $startDate = now();
         $endDate = now()->addMonths($months);
 
-        // Ambil lisensi yang bukan Perpetual dan akan kedaluwarsa dalam rentang waktu yang dipilih
-        $licenses = License::with('vendor')
+        $baseQuery = License::with('vendor')
             ->where('type', '!=', 'Perpetual')
-            ->whereBetween('expiry_date', [$startDate, $endDate])
-            ->orderBy('expiry_date', 'asc')
-            ->get();
+            ->whereBetween('expiry_date', [$startDate, $endDate]);
 
-        // Kalkulasi Metrik Utama
-        $totalProjectedCost = $licenses->sum('cost');
-        $licensesDue = $licenses->count();
+        // Kalkulasi Metrik Utama (Grand Total Absolut dari Database)
+        $totalProjectedCost = (clone $baseQuery)->sum('cost');
+        $grandTotal = $totalProjectedCost; // Alias sesuai permintaan
+        $licensesDue = (clone $baseQuery)->count();
         $avgMonthlyCost = $months > 0 ? $totalProjectedCost / $months : 0;
 
-        // Persiapan Data Chart.js (Grouping by Month-Year)
-        // Array untuk menyimpan total biaya per bulan
-        $monthlyCosts = [];
+        // Kueri terpisah untuk daftar terpaginasi
+        $expiringLicenses = (clone $baseQuery)
+            ->orderBy('expiry_date', 'asc')
+            ->paginate(10)
+            ->withQueryString();
 
-        // Inisialisasi array untuk semua bulan dalam rentang untuk memastikan chart tidak bolong
+        // Kueri untuk Chart (mengambil semua data dalam rentang, tidak terpaginasi)
+        $chartLicenses = (clone $baseQuery)->orderBy('expiry_date', 'asc')->get();
+
+        // Persiapan Data Chart.js (Grouping by Month-Year)
+        $monthlyCosts = [];
         $currentDate = $startDate->copy();
         for ($i = 0; $i < $months; $i++) {
             $monthKey = $currentDate->format('M Y');
@@ -46,8 +50,7 @@ class CostProjectionController extends Controller
             $currentDate->addMonth();
         }
 
-        // Akumulasi biaya ke bulan yang sesuai
-        foreach ($licenses as $license) {
+        foreach ($chartLicenses as $license) {
             $monthKey = $license->expiry_date->format('M Y');
             if (isset($monthlyCosts[$monthKey])) {
                 $monthlyCosts[$monthKey] += $license->cost;
@@ -60,9 +63,10 @@ class CostProjectionController extends Controller
         $chartValues = array_values($monthlyCosts);
 
         return view('monitoring.cost-projection', compact(
-            'licenses',
+            'expiringLicenses',
             'months',
             'totalProjectedCost',
+            'grandTotal',
             'licensesDue',
             'avgMonthlyCost',
             'chartLabels',

@@ -20,12 +20,12 @@ class PaymentController extends Controller
         // kecuali yang sudah memiliki transaksi aktif (pending = sedang diproses,
         // paid = sudah lunas) agar user tidak melakukan double payment.
         $licenses = License::with(['vendor', 'category'])
-            ->whereIn('status', ['expiring', 'expired'])
-            ->whereDoesntHave('payments', function ($query) {
-                $query->whereIn('status', ['pending', 'paid']);
-            })
-            ->orderByRaw("FIELD(status, 'expired', 'expiring')")
-            ->orderBy('expiry_date')
+            ->where('expiry_date', '<=', now()->addDays(31))
+            ->whereNotIn('status', ['paid', 'cancelled'])
+            // ->whereDoesntHave('payments', function ($query) {
+            //     $query->whereIn('status', ['pending', 'paid']);
+            // })
+            ->orderBy('expiry_date', 'asc')
             ->paginate(15);
 
         return view('finance.payments', compact('licenses'));
@@ -155,7 +155,8 @@ class PaymentController extends Controller
     public function history(Request $request): View
     {
         $query = Payment::with(['license.vendor', 'creator', 'approver'])
-            ->latest('payment_date');
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ->orderBy('created_at', 'desc');
 
         if ($status = $request->input('status')) {
             $query->where('status', $status);

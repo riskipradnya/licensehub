@@ -56,25 +56,29 @@
     <div class="card p-0 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="data-table" id="invoices-table">
-                <thead><tr><th>Invoice #</th><th>License</th><th>Vendor</th><th>Issued</th><th>Due</th><th>Amount</th><th>Status</th><th class="text-center">Actions</th></tr></thead>
+                <thead><tr><th>Invoice #</th><th>License</th><th>Vendor</th><th class="text-center"><div class="flex justify-center w-full">Issued</div></th><th class="text-center"><div class="flex justify-center w-full">Due</div></th><th class="text-center"><div class="flex justify-center w-full">Amount</div></th><th class="text-center"><div class="flex justify-center w-full">Status</div></th><th class="text-center"><div class="flex justify-center w-full">Actions</div></th></tr></thead>
                 <tbody>
                     @forelse($invoices as $inv)
                     <tr>
                         <td class="font-mono text-xs font-medium" style="color: var(--color-primary);">{{ $inv->invoice_number }}</td>
                         <td class="font-medium">{{ $inv->license->name ?? '—' }}</td>
                         <td>{{ $inv->vendor->name ?? '—' }}</td>
-                        <td>{{ $inv->invoice_date->format('d M Y') }}</td>
-                        <td>
+                        <td class="text-center">{{ $inv->invoice_date->format('d M Y') }}</td>
+                        <td class="text-center">
                             @if($inv->isOverdue())
                                 <span style="color: var(--color-status-danger);">{{ $inv->due_date->format('d M Y') }}</span>
                             @else
                                 {{ $inv->due_date?->format('d M Y') ?? '—' }}
                             @endif
                         </td>
-                        <td class="font-semibold">Rp {{ number_format((float)$inv->total_amount, 0, ',', '.') }}</td>
-                        <td><x-status-badge :status="$inv->status === 'sent' ? 'expiring' : ($inv->status === 'overdue' ? 'expired' : $inv->status)" :label="ucfirst($inv->status)" size="sm" /></td>
+                        <td class="text-center font-semibold">Rp {{ number_format((float)$inv->total_amount, 0, ',', '.') }}</td>
                         <td class="text-center">
-                            <div class="flex items-center justify-center gap-1" x-data="{ showStatus: false }">
+                            <div class="flex justify-center w-full">
+                                <x-status-badge :status="$inv->status === 'sent' ? 'expiring' : ($inv->status === 'overdue' ? 'expired' : $inv->status)" :label="ucfirst($inv->status)" size="sm" />
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="flex justify-center w-full items-center gap-2" x-data="{ showStatus: false }">
                                 {{-- Download File --}}
                                 @if($inv->file_path)
                                 <a href="{{ \Illuminate\Support\Facades\Storage::url($inv->file_path) }}" target="_blank" class="btn-ghost p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50" title="Download Invoice File">

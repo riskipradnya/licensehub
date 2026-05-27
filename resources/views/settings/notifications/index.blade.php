@@ -65,28 +65,30 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>WhatsApp</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th class="text-center"><div class="flex justify-center w-full">Name</div></th>
+                        <th class="text-center"><div class="flex justify-center w-full">Email</div></th>
+                        <th class="text-center"><div class="flex justify-center w-full">WhatsApp</div></th>
+                        <th class="text-center"><div class="flex justify-center w-full">Status</div></th>
+                        <th class="text-center"><div class="flex justify-center w-full">Action</div></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($recipients as $recipient)
                         <tr>
-                            <td class="font-medium">{{ $recipient->name }}</td>
-                            <td>{{ $recipient->email }}</td>
-                            <td>{{ $recipient->whatsapp ?? '-' }}</td>
-                            <td>
-                                @if($recipient->is_active)
-                                    <span class="badge badge--active">Active</span>
-                                @else
-                                    <span class="badge badge--neutral">Inactive</span>
-                                @endif
+                            <td class="text-center font-medium">{{ $recipient->name }}</td>
+                            <td class="text-center">{{ $recipient->email }}</td>
+                            <td class="text-center">{{ $recipient->whatsapp ?? '-' }}</td>
+                            <td class="text-center">
+                                <div class="flex justify-center w-full">
+                                    @if($recipient->is_active)
+                                        <span class="badge badge--active">Active</span>
+                                    @else
+                                        <span class="badge badge--neutral">Inactive</span>
+                                    @endif
+                                </div>
                             </td>
-                            <td>
-                                <div class="flex items-center gap-2">
+                            <td class="text-center">
+                                <div class="flex justify-center items-center gap-2 w-full">
                                     <form action="{{ route('notification-settings.update', $recipient->id) }}" method="POST">
                                         @csrf
                                         @method('PUT')

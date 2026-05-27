@@ -13,19 +13,28 @@ class NotificationController extends Controller
      */
     public function index(): View
     {
-        $notifications = auth()->user()->notifications;
+        $personalNotifications = auth()->user()->notifications;
+
+        $sentTotalCount = \Illuminate\Notifications\DatabaseNotification::where('data->tab', 'sent')->count();
+
+        $sentNotifications = \Illuminate\Notifications\DatabaseNotification::where('data->tab', 'sent')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15)
+            ->withQueryString();
 
         $counts = [
-            'all' => $notifications->count(),
-            'expired' => $notifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'expired')->count(),
-            'reminder' => $notifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'reminder')->count(),
-            'warning' => $notifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'warning')->count(),
-            'urgent' => $notifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'urgent')->count(),
-            'resolved' => $notifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'resolved')->count(),
-            'sent' => $notifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'sent')->count(),
+            'all' => $personalNotifications->count(),
+            'expired' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'expired')->count(),
+            'reminder' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'reminder')->count(),
+            'warning' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'warning')->count(),
+            'urgent' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'urgent')->count(),
+            'resolved' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'resolved')->count(),
+            'sent' => $sentTotalCount,
         ];
 
-        return view('monitoring.notifications', compact('notifications', 'counts'));
+        $notifications = $personalNotifications;
+
+        return view('monitoring.notifications', compact('notifications', 'sentNotifications', 'counts'));
     }
 
     /**

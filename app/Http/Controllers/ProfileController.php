@@ -17,8 +17,8 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
         
-        // Fetch the last 5 activities of the authenticated user
-        $activities = Activity::causedBy($user)->latest()->take(5)->get();
+        // Fetch the paginated activities of the authenticated user
+        $activities = Activity::causedBy($user)->latest()->paginate(8);
 
         return view('settings.profile', compact('user', 'activities'));
     }

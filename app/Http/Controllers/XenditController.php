@@ -143,7 +143,7 @@ class XenditController extends Controller
                     ])
                     ->log('xendit_disbursement_created');
 
-                return redirect()->route('payments.index')
+                return redirect()->route('payments.history')
                     ->with('success', "Proses transfer sedang berjalan. Reference: {$externalId}");
             }
 
@@ -221,7 +221,10 @@ class XenditController extends Controller
 
             // Jika pembayaran COMPLETED, perbarui lisensi terkait
             if ($newStatus === 'paid') {
-                $this->renewLicense($payment->license);
+                // $this->renewLicense($payment->license); // DINONAKTIFKAN: Mencegah Double Update (Sudah di-handle oleh Payment::booted)
+                if ($payment->license) {
+                    $payment->license->update(['status' => 'active']);
+                }
             }
 
             return response()->json(['message' => 'OK']);

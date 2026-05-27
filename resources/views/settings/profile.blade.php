@@ -1,11 +1,11 @@
 <x-app-layout>
-    <x-slot name="title">Profil Saya</x-slot>
+    <x-slot name="title">My Profile</x-slot>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <!-- Header -->
         <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white" style="color: var(--color-text-primary);">Profil Pengguna</h1>
-            <p class="text-sm mt-1 text-gray-500" style="color: var(--color-text-secondary);">Kelola identitas dan lihat riwayat aktivitas Anda.</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white" style="color: var(--color-text-primary);">User Profile</h1>
+            <p class="text-sm mt-1 text-gray-500" style="color: var(--color-text-secondary);">Manage your identity and view your activity history.</p>
         </div>
 
         @if(session('success'))
@@ -22,8 +22,8 @@
                 <!-- CARD 1: Identitas Diri (Editable) -->
                 <div class="card p-0 shadow-lg rounded-2xl border border-gray-200 overflow-hidden" style="background: var(--color-card-bg);">
                     <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50" style="background: rgba(0,0,0,0.02);">
-                        <h3 class="text-lg font-bold" style="color: var(--color-text-primary);">Identitas Diri</h3>
-                        <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Perbarui foto profil dan nama lengkap Anda.</p>
+                        <h3 class="text-lg font-bold" style="color: var(--color-text-primary);">Profile Information</h3>
+                        <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Update your profile photo and full name.</p>
                     </div>
                     
                     <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="p-6">
@@ -64,7 +64,7 @@
                             <!-- Name Input Section -->
                             <div class="flex-1 w-full space-y-4">
                                 <div>
-                                    <label class="form-label font-medium mb-1.5 block" style="color: var(--color-text-secondary);">Nama Lengkap</label>
+                                    <label class="form-label font-medium mb-1.5 block" style="color: var(--color-text-secondary);">Name</label>
                                     <input type="text" name="name" value="{{ old('name', $user->name) }}" required class="form-input w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all">
                                     @error('name')
                                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -75,7 +75,7 @@
 
                         <div class="flex justify-end pt-4 border-t border-gray-100">
                             <button type="submit" class="btn btn-primary px-6 py-2.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all">
-                                Simpan Perubahan
+                                Save
                             </button>
                         </div>
                     </form>
@@ -84,26 +84,26 @@
                 <!-- CARD 2: Informasi Kredensial (Read-Only) -->
                 <div class="card p-0 shadow-lg rounded-2xl border border-gray-200 overflow-hidden" style="background: var(--color-card-bg);">
                     <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50" style="background: rgba(0,0,0,0.02);">
-                        <h3 class="text-lg font-bold" style="color: var(--color-text-primary);">Informasi Kredensial</h3>
-                        <p class="text-sm mt-1 text-gray-500">Kredensial sistem bersifat aman dan diawasi.</p>
+                        <h3 class="text-lg font-bold" style="color: var(--color-text-primary);">Credential Information</h3>
+                        <p class="text-sm mt-1 text-gray-500">System credentials are secure and monitored.</p>
                     </div>
                     
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Username Login</p>
-                                <p class="text-lg font-mono font-medium text-gray-800">{{ $user->username }}</p>
+                            <div class="bg-gray-50 dark:bg-[#1E293B] border border-gray-100 dark:border-gray-700 rounded-xl p-4">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Login Username</p>
+                                <p class="text-lg font-mono font-medium text-gray-800 dark:text-gray-300">{{ $user->username }}</p>
                             </div>
                             
-                            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Peran Akses (Role)</p>
+                            <div class="bg-gray-50 dark:bg-[#1E293B] border border-gray-100 dark:border-gray-700 rounded-xl p-4">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Access Role</p>
                                 @php
                                     $badgeClass = match($user->role) {
-                                        'super_admin'     => 'bg-purple-100 text-purple-800 border-purple-200',
-                                        'it_staff'        => 'bg-blue-100 text-blue-800 border-blue-200',
-                                        'finance_manager' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                                        'finance_staff'   => 'bg-green-100 text-green-800 border-green-200',
-                                        default           => 'bg-gray-100 text-gray-800 border-gray-200',
+                                        'super_admin'     => 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+                                        'it_staff'        => 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+                                        'finance_manager' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+                                        'finance_staff'   => 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+                                        default           => 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700',
                                     };
                                     $roleLabel = ucwords(str_replace('_', ' ', $user->role));
                                 @endphp
@@ -112,18 +112,18 @@
                                 </span>
                             </div>
                             
-                            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 md:col-span-2 flex items-center justify-between">
+                            <div class="bg-gray-50 dark:bg-[#1E293B] border border-gray-100 dark:border-gray-700 rounded-xl p-4 md:col-span-2 flex items-center justify-between">
                                 <div>
-                                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Bergabung Sejak</p>
-                                    <p class="text-sm font-medium text-gray-700">{{ $user->created_at->format('d M Y') }}</p>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Joined Since</p>
+                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $user->created_at->format('d M Y') }}</p>
                                 </div>
-                                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <svg class="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             </div>
                         </div>
 
-                        <div class="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
-                            <svg class="w-5 h-5 shrink-0 mt-0.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <p class="text-sm leading-relaxed"><strong>Hubungi Super Admin</strong> jika Anda ingin mengubah username, mengatur ulang password, atau merubah status otoritas (Role) Anda di dalam sistem.</p>
+                        <div class="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-300">
+                            <svg class="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <p class="text-sm leading-relaxed"><strong>Contact Super Admin</strong> if you need to change your username, reset your password, or modify your authority status (Role) within the system.</p>
                         </div>
                     </div>
                 </div>
@@ -136,7 +136,7 @@
                 <!-- CARD 3: Aktivitas Terakhir Anda -->
                 <div class="card p-0 shadow-lg rounded-2xl border border-gray-200 overflow-hidden h-full" style="background: var(--color-card-bg);">
                     <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50" style="background: rgba(0,0,0,0.02);">
-                        <h3 class="text-lg font-bold" style="color: var(--color-text-primary);">Aktivitas Terakhir Anda</h3>
+                        <h3 class="text-lg font-bold" style="color: var(--color-text-primary);">Your Recent Activity</h3>
                     </div>
                     
                     <div class="p-6">
@@ -145,7 +145,7 @@
                                 <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </div>
-                                <p class="text-sm text-gray-500">Belum ada jejak aktivitas tercatat.</p>
+                                <p class="text-sm text-gray-500">No activity footprint recorded yet.</p>
                             </div>
                         @else
                             <div class="relative border-l-2 border-indigo-100 ml-3 space-y-8">
@@ -175,10 +175,16 @@
                                         // Human readable action
                                         $actionText = ucfirst($activity->event);
                                         if ($subjectClass) {
-                                            $subjectName = $activity->subject->name ?? $activity->subject->invoice_number ?? $activity->subject->id ?? '';
+                                            $subjectName = $activity->subject?->name ?? $activity->subject?->invoice_number ?? $activity->subject?->id ?? '';
+                                            
+                                            if ($subjectClass === 'Payment' && isset($activity->subject?->id)) {
+                                                $licenseName = $activity->subject?->license?->name ?? 'Lisensi tidak ditemukan';
+                                                $subjectName = "#{$activity->subject->id} ({$licenseName})";
+                                            }
+
                                             $actionText .= " {$subjectClass}";
                                             if ($subjectName) {
-                                                $actionText .= " : <span class='font-semibold text-gray-800'>{$subjectName}</span>";
+                                                $actionText .= " : <span class='font-semibold text-slate-900 dark:text-slate-200'>{$subjectName}</span>";
                                             }
                                         } else {
                                             $actionText = ucfirst($activity->description);
@@ -202,14 +208,13 @@
                                     </div>
                                 @endforeach
                             </div>
+                            
+                            @if($activities->hasPages())
+                                <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800/50">
+                                    {{ $activities->links('vendor.pagination.compact') }}
+                                </div>
+                            @endif
                         @endif
-                        
-                        <div class="mt-6 pt-4 border-t border-gray-100 text-center">
-                            <a href="{{ route('audit-log.index') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors inline-flex items-center">
-                                Lihat Semua Log Aktivitas
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </a>
-                        </div>
                     </div>
                 </div>
 
