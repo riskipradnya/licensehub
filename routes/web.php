@@ -41,46 +41,47 @@ Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // === Dashboard ===
+    // === Dashboard (All Authenticated) ===
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // === Profile & Preferences (All Authenticated) ===
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.index');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
     // ==========================================================
-    // === URUTAN MUTLAK: Categories HARUS di atas Licenses! ====
+    //  IT DEPARTMENT & NOTIFICATION SETUP
     // ==========================================================
-    Route::prefix('licenses')->name('licenses.')->group(function () {
-        Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
+    Route::middleware('role:super_admin,it_team')->group(function () {
+        Route::prefix('licenses')->name('licenses.')->group(function () {
+            Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
+        });
+        Route::resource('licenses', LicenseController::class);
+        Route::resource('vendors', VendorController::class);
+        
+        Route::delete('/documents/vendor/{vendor}/{field}', [DocumentController::class, 'destroyVendorDoc'])->name('documents.destroyVendorDoc');
+        Route::resource('documents', DocumentController::class)->only(['index', 'store', 'show', 'destroy']);
+        
+        Route::resource('notification-settings', App\Http\Controllers\NotificationSettingController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
     });
 
-    // === Licenses (IT & Finance can view, IT can manage) ===
-    Route::resource('licenses', LicenseController::class);
-
-    // === Vendors ===
-    Route::resource('vendors', VendorController::class);
-    // (Tanda kurung kurawal nyasar di sini sudah dihapus!)
-
-    // === Documents ===
-    Route::delete('/documents/vendor/{vendor}/{field}', [DocumentController::class, 'destroyVendorDoc'])->name('documents.destroyVendorDoc');
-    Route::resource('documents', DocumentController::class)->only(['index', 'store', 'show', 'destroy']);
-
-    // === Monitoring ===
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
-    Route::get('/cost-projection', [CostProjectionController::class, 'index'])->name('cost-projection.index');
-    Route::get('/cost-projection/export', [CostProjectionController::class, 'export'])->name('cost-projection.export');
-
-    Route::middleware('role:super_admin,finance_manager')->group(function () {
+    // ==========================================================
+    //  MONITORING
+    // ==========================================================
+    Route::middleware('role:super_admin,finance_team,it_team')->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+        Route::get('/cost-projection', [CostProjectionController::class, 'index'])->name('cost-projection.index');
+        Route::get('/cost-projection/export', [CostProjectionController::class, 'export'])->name('cost-projection.export');
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
     });
 
-    // === Process Payment for a specific license (accessible to all authenticated users) ===
-    Route::get('/payments/process/{license}', [PaymentController::class, 'renew'])->name('payments.renew');
+    // ==========================================================
+    //  FINANCE
+    // ==========================================================
+    Route::middleware('role:super_admin,finance_team')->group(function () {
 
-    // === Xendit Disbursement ===
-    Route::post('/xendit/disburse', [XenditController::class, 'createDisbursement'])->name('xendit.disburse');
-    
-    // === Finance (restricted to finance roles) ===
-    Route::middleware('role:finance_manager,finance_staff')->group(function () {
-        // Payments
+        // Finance - Payments
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::post('/payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
@@ -89,28 +90,27 @@ Route::middleware('auth')->group(function () {
         Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
         Route::get('/payments/export', [PaymentController::class, 'export'])->name('payments.export');
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
+        Route::get('/payments/process/{license}', [PaymentController::class, 'renew'])->name('payments.renew');
+        
+        Route::post('/xendit/disburse', [XenditController::class, 'createDisbursement'])->name('xendit.disburse');
 
-        // Invoices
+        // Finance - Invoices
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
         Route::post('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.updateStatus');
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
 
+        // Finance - Reports
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     });
 
-    // === Settings ===
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.index');
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-
+    // ==========================================================
+    //  USER & ROLE MANAGEMENT
+    // ==========================================================
     Route::middleware('role:super_admin')->group(function () {
         Route::resource('users', UserController::class);
     });
 
-    Route::middleware('role:super_admin,it_manager')->group(function () {
-        Route::resource('notification-settings', App\Http\Controllers\NotificationSettingController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
-    });
 }); // <--- INI ADALAH PENUTUP MIDDLEWARE AUTH YANG SEBENARNYA!
 
 // ══════════════════════════════════════════════════════════════

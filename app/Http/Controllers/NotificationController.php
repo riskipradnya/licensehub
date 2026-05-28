@@ -13,28 +13,49 @@ class NotificationController extends Controller
      */
     public function index(): View
     {
-        $personalNotifications = auth()->user()->notifications;
+        // Backend Filtering: Ambil parameter tab dari URL
+        $currentTab = request('tab', 'all');
+        // DEDUPLIKASI: Hanya ambil dari entitas tunggal (NotificationRecipient) agar notifikasi broadcast ke banyak User tidak tampil berulang.
+        $baseQuery = \Illuminate\Notifications\DatabaseNotification::where('notifiable_type', 'App\Models\NotificationRecipient');
 
-        $sentTotalCount = \Illuminate\Notifications\DatabaseNotification::where('data->tab', 'sent')->count();
+        $query = clone $baseQuery;
+        $query->orderBy('created_at', 'desc');
 
-        $sentNotifications = \Illuminate\Notifications\DatabaseNotification::where('data->tab', 'sent')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+        if ($currentTab === 'expired') {
+            $query->where('data->title', 'LIKE', '%EXPIRED%');
+        } elseif ($currentTab === 'urgent') {
+            $query->where('data->title', 'LIKE', '%URGENT%');
+        } elseif ($currentTab === 'warning') {
+            $query->where('data->level', 'warning');
+        } elseif ($currentTab === 'reminder') {
+            $query->where('data->level', 'info');
+        } elseif ($currentTab === 'resolved') {
+            $query->where(function($q) {
+                $q->where('data->level', 'success')
+                  ->orWhere('data->level', 'active');
+            });
+        } elseif ($currentTab === 'sent') {
+            // Tab 'sent' khusus menampilkan riwayat pengiriman sistem tanpa filter spesifik
+        }
 
+        // Tarik notifikasi (dengan filter server-side) agar paginate tidak menyebabkan blank page
+        $notifications = $query->paginate(15)->withQueryString();
+
+        // Hitung counter global secara tersinkronisasi (bebas duplikat)
         $counts = [
-            'all' => $personalNotifications->count(),
-            'expired' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'expired')->count(),
-            'reminder' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'reminder')->count(),
-            'warning' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'warning')->count(),
-            'urgent' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'urgent')->count(),
-            'resolved' => $personalNotifications->filter(fn($n) => isset($n->data['tab']) && $n->data['tab'] === 'resolved')->count(),
-            'sent' => $sentTotalCount,
+            'all'      => (clone $baseQuery)->count(),
+            'expired'  => (clone $baseQuery)->where('data->title', 'LIKE', '%EXPIRED%')->count(),
+            'urgent'   => (clone $baseQuery)->where('data->title', 'LIKE', '%URGENT%')->count(),
+            'warning'  => (clone $baseQuery)->where('data->level', 'warning')->count(),
+            'reminder' => (clone $baseQuery)->where('data->level', 'info')->count(),
+            'resolved' => (clone $baseQuery)->where(function($q) {
+                              $q->where('data->level', 'success')
+                                ->orWhere('data->level', 'active');
+                          })->count(),
+            'sent'     => (clone $baseQuery)->count(),
         ];
 
-        $notifications = $personalNotifications;
-
-        return view('monitoring.notifications', compact('notifications', 'sentNotifications', 'counts'));
+        return view('monitoring.notifications', compact('notifications', 'counts'));
     }
 
     /**
@@ -42,7 +63,14 @@ class NotificationController extends Controller
      */
     public function markAllAsRead(): RedirectResponse
     {
+        // Update notifikasi personal (jika ada)
         auth()->user()->unreadNotifications->markAsRead();
+        
+        // Update notifikasi global sistem agar hilang tanda unread-nya
+        \Illuminate\Notifications\DatabaseNotification::where('notifiable_type', 'App\Models\NotificationRecipient')
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
         return back()->with('success', 'Semua notifikasi telah ditandai sebagai dibaca.');
     }
 }

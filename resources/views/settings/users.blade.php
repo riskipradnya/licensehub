@@ -47,11 +47,10 @@
                             @php
                                 // Role Badge Mapping
                                 $badgeClass = match($user->role) {
-                                    'super_admin'     => 'bg-purple-100 text-purple-800 border-purple-200',
-                                    'it_staff'        => 'bg-blue-100 text-blue-800 border-blue-200',
-                                    'finance_manager' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                                    'finance_staff'   => 'bg-green-100 text-green-800 border-green-200',
-                                    default           => 'bg-gray-100 text-gray-800 border-gray-200',
+                                    'super_admin'  => 'bg-purple-100 text-purple-800 border-purple-200',
+                                    'it_team'      => 'bg-blue-100 text-blue-800 border-blue-200',
+                                    'finance_team' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                    default        => 'bg-gray-100 text-gray-800 border-gray-200',
                                 };
                                 $roleLabel = ucwords(str_replace('_', ' ', $user->role));
                             @endphp
@@ -132,9 +131,8 @@
                         <label class="form-label font-medium mb-1.5 block" style="color: var(--color-text-secondary);">Role Hak Akses <span class="text-red-500">*</span></label>
                         <select name="role" required class="form-input w-full bg-white">
                             <option value="super_admin">Super Admin (Akses Penuh)</option>
-                            <option value="it_staff">IT Staff (Manajemen Lisensi)</option>
-                            <option value="finance_manager">Finance Manager (Approval & Report)</option>
-                            <option value="finance_staff">Finance Staff (Manajemen Invoice)</option>
+                            <option value="it_team">IT Team</option>
+                            <option value="finance_team">Finance Team</option>
                         </select>
                     </div>
                 </div>
@@ -172,9 +170,8 @@
                         <label class="form-label font-medium mb-1.5 block" style="color: var(--color-text-secondary);">Role Hak Akses <span class="text-red-500">*</span></label>
                         <select id="editRole" name="role" required class="form-input w-full bg-white">
                             <option value="super_admin">Super Admin (Akses Penuh)</option>
-                            <option value="it_staff">IT Staff (Manajemen Lisensi)</option>
-                            <option value="finance_manager">Finance Manager (Approval & Report)</option>
-                            <option value="finance_staff">Finance Staff (Manajemen Invoice)</option>
+                            <option value="it_team">IT Team</option>
+                            <option value="finance_team">Finance Team</option>
                         </select>
                     </div>
                 </div>

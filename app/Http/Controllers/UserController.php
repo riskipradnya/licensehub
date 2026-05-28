@@ -29,7 +29,7 @@ class UserController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
-            'role'     => ['required', 'string', Rule::in(['super_admin', 'it_staff', 'finance_manager', 'finance_staff'])],
+            'role'     => ['required', 'string', Rule::in(['super_admin', 'it_team', 'finance_team'])],
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -47,7 +47,7 @@ class UserController extends Controller
         $rules = [
             'name'     => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role'     => ['required', 'string', Rule::in(['super_admin', 'it_staff', 'finance_manager', 'finance_staff'])],
+            'role'     => ['required', 'string', Rule::in(['super_admin', 'it_team', 'finance_team'])],
         ];
 
         // Jika password diisi, validasi min:8

@@ -2,60 +2,66 @@
 
 @php
 $currentRoute = request()->path();
+$userRole = auth()->user()->role ?? 'guest';
 
 $menuGroups = [
     [
         'label' => 'Main',
+        'roles' => ['super_admin', 'it_team', 'finance_team'],
         'items' => [
-            ['name' => 'Dashboard', 'icon' => 'chart-bar', 'route' => 'dashboard', 'roles' => ['*']],
+            ['name' => 'Dashboard', 'icon' => 'chart-bar', 'route' => 'dashboard', 'roles' => ['super_admin', 'it_team', 'finance_team']],
         ]
     ],
     [
         'label' => 'IT Department',
+        'roles' => ['super_admin', 'it_team'],
         'items' => [
-            ['name' => 'License Management', 'icon' => 'document-text', 'route' => 'licenses', 'roles' => ['super_admin', 'it_staff', 'finance_manager'],
+            ['name' => 'License Management', 'icon' => 'document-text', 'route' => 'licenses', 'roles' => ['super_admin', 'it_team'],
                 'children' => [
                     ['name' => 'License List', 'route' => 'licenses'],
                     ['name' => 'Add License', 'route' => 'licenses/create'],
                     ['name' => 'Categories', 'route' => 'licenses/categories'],
                 ]
             ],
-            ['name' => 'Vendor Management', 'icon' => 'building-office', 'route' => 'vendors', 'roles' => ['super_admin', 'it_staff', 'finance_manager'],
+            ['name' => 'Vendor Management', 'icon' => 'building-office', 'route' => 'vendors', 'roles' => ['super_admin', 'it_team'],
                 'children' => [
                     ['name' => 'Vendor List', 'route' => 'vendors'],
                     ['name' => 'Add Vendor', 'route' => 'vendors/create'],
                 ]
             ],
-            ['name' => 'Documents', 'icon' => 'folder', 'route' => 'documents', 'roles' => ['*']],
+            ['name' => 'Documents', 'icon' => 'folder', 'route' => 'documents', 'roles' => ['super_admin', 'it_team']],
         ]
     ],
     [
         'label' => 'Monitoring',
+        'roles' => ['super_admin', 'finance_team', 'it_team'],
         'items' => [
-            ['name' => 'Notifications & Alerts', 'icon' => 'bell-alert', 'route' => 'notifications', 'roles' => ['*']],
-            ['name' => 'Cost Projection', 'icon' => 'currency-dollar', 'route' => 'cost-projection', 'roles' => ['*']],
-            ['name' => 'Audit Log', 'icon' => 'clipboard-document-list', 'route' => 'audit-log', 'roles' => ['super_admin', 'finance_manager']],
+            ['name' => 'Notifications & Alerts', 'icon' => 'bell-alert', 'route' => 'notifications', 'roles' => ['super_admin', 'finance_team', 'it_team']],
+            ['name' => 'Cost Projection', 'icon' => 'currency-dollar', 'route' => 'cost-projection', 'roles' => ['super_admin', 'finance_team', 'it_team']],
+            ['name' => 'Audit Log', 'icon' => 'clipboard-document-list', 'route' => 'audit-log', 'roles' => ['super_admin', 'finance_team', 'it_team']],
         ]
     ],
     [
         'label' => 'Finance',
+        'roles' => ['super_admin', 'finance_team'],
         'items' => [
-            ['name' => 'Payments', 'icon' => 'credit-card', 'route' => 'payments', 'roles' => ['super_admin', 'finance_manager', 'finance_staff'],
+            ['name' => 'Payments', 'icon' => 'credit-card', 'route' => 'payments', 'roles' => ['super_admin', 'finance_team'],
                 'children' => [
                     ['name' => 'Process Payment', 'route' => 'payments'],
                     ['name' => 'Payment History', 'route' => 'payments/history'],
                 ]
             ],
-            ['name' => 'Invoices', 'icon' => 'document-duplicate', 'route' => 'invoices', 'roles' => ['super_admin', 'finance_manager', 'finance_staff']],
-            ['name' => 'Financial Reports', 'icon' => 'chart-pie', 'route' => 'reports', 'roles' => ['super_admin', 'finance_manager', 'finance_staff']],
+            ['name' => 'Invoices', 'icon' => 'document-duplicate', 'route' => 'invoices', 'roles' => ['super_admin', 'finance_team']],
+            ['name' => 'Financial Reports', 'icon' => 'chart-pie', 'route' => 'reports', 'roles' => ['super_admin', 'finance_team']],
         ]
     ],
     [
         'label' => 'Settings',
+        'roles' => ['super_admin', 'it_team', 'finance_team'],
         'items' => [
             ['name' => 'User & Role Management', 'icon' => 'users', 'route' => 'users', 'roles' => ['super_admin']],
-            ['name' => 'Setup Notifications', 'icon' => 'bell', 'route' => 'notification-settings', 'roles' => ['super_admin']],
-            ['name' => 'Profile & Preferences', 'icon' => 'cog-6-tooth', 'route' => 'profile', 'roles' => ['*']],
+            ['name' => 'Setup Notifications', 'icon' => 'bell', 'route' => 'notification-settings', 'roles' => ['super_admin', 'it_team']],
+            ['name' => 'Profile & Preferences', 'icon' => 'cog-6-tooth', 'route' => 'profile', 'roles' => ['super_admin', 'it_team', 'finance_team']],
         ]
     ],
 ];
@@ -88,57 +94,61 @@ $menuGroups = [
     {{-- NAVIGATION --}}
     <nav class="flex-1 px-3 py-4 space-y-1">
         @foreach($menuGroups as $group)
-            {{-- Section Label --}}
-            <div class="sidebar-section" x-show="!$store.sidebar.collapsed" x-transition>
-                {{ $group['label'] }}
-            </div>
+            @if(in_array($userRole, $group['roles']))
+                {{-- Section Label --}}
+                <div class="sidebar-section" x-show="!$store.sidebar.collapsed" x-transition>
+                    {{ $group['label'] }}
+                </div>
 
-            @foreach($group['items'] as $item)
-                @php
-                    $isActive = str_starts_with($currentRoute, $item['route']);
-                    $hasChildren = isset($item['children']) && count($item['children']) > 0;
-                @endphp
+                @foreach($group['items'] as $item)
+                    @if(in_array($userRole, $item['roles']))
+                        @php
+                            $isActive = str_starts_with($currentRoute, $item['route']);
+                            $hasChildren = isset($item['children']) && count($item['children']) > 0;
+                        @endphp
 
-                @if($hasChildren)
-                    {{-- PARENT WITH CHILDREN --}}
-                    <div>
-                        <button @click="expandedMenu = expandedMenu === '{{ $item['route'] }}' ? null : '{{ $item['route'] }}'"
-                                class="sidebar-link w-full justify-between {{ $isActive ? 'active' : '' }}"
-                                title="{{ $item['name'] }}">
-                            <span class="flex items-center gap-3">
+                        @if($hasChildren)
+                            {{-- PARENT WITH CHILDREN --}}
+                            <div>
+                                <button @click="expandedMenu = expandedMenu === '{{ $item['route'] }}' ? null : '{{ $item['route'] }}'"
+                                        class="sidebar-link w-full justify-between {{ $isActive ? 'active' : '' }}"
+                                        title="{{ $item['name'] }}">
+                                    <span class="flex items-center gap-3">
+                                        <x-sidebar-icon :name="$item['icon']" />
+                                        <span x-show="!$store.sidebar.collapsed" x-transition>{{ $item['name'] }}</span>
+                                    </span>
+                                    <svg x-show="!$store.sidebar.collapsed"
+                                         class="w-4 h-4 transition-transform duration-200"
+                                         :class="expandedMenu === '{{ $item['route'] }}' ? 'rotate-90' : ''"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </button>
+                                <div x-show="expandedMenu === '{{ $item['route'] }}' && !$store.sidebar.collapsed"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 -translate-y-1"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     class="ml-6 mt-1 space-y-0.5 border-l border-white/10 pl-3">
+                                    @foreach($item['children'] as $child)
+                                        <a href="/{{ $child['route'] }}"
+                                           class="sidebar-link text-xs py-1.5 {{ $currentRoute === $child['route'] ? 'active' : '' }}">
+                                            {{ $child['name'] }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            {{-- SINGLE ITEM --}}
+                            <a href="/{{ $item['route'] }}"
+                               class="sidebar-link {{ $isActive ? 'active' : '' }}"
+                               title="{{ $item['name'] }}">
                                 <x-sidebar-icon :name="$item['icon']" />
                                 <span x-show="!$store.sidebar.collapsed" x-transition>{{ $item['name'] }}</span>
-                            </span>
-                            <svg x-show="!$store.sidebar.collapsed"
-                                 class="w-4 h-4 transition-transform duration-200"
-                                 :class="expandedMenu === '{{ $item['route'] }}' ? 'rotate-90' : ''"
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </button>
-                        <div x-show="expandedMenu === '{{ $item['route'] }}' && !$store.sidebar.collapsed"
-                             x-transition:enter="transition ease-out duration-200"
-                             x-transition:enter-start="opacity-0 -translate-y-1"
-                             x-transition:enter-end="opacity-100 translate-y-0"
-                             class="ml-6 mt-1 space-y-0.5 border-l border-white/10 pl-3">
-                            @foreach($item['children'] as $child)
-                                <a href="/{{ $child['route'] }}"
-                                   class="sidebar-link text-xs py-1.5 {{ $currentRoute === $child['route'] ? 'active' : '' }}">
-                                    {{ $child['name'] }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                @else
-                    {{-- SINGLE ITEM --}}
-                    <a href="/{{ $item['route'] }}"
-                       class="sidebar-link {{ $isActive ? 'active' : '' }}"
-                       title="{{ $item['name'] }}">
-                        <x-sidebar-icon :name="$item['icon']" />
-                        <span x-show="!$store.sidebar.collapsed" x-transition>{{ $item['name'] }}</span>
-                    </a>
-                @endif
-            @endforeach
+                            </a>
+                        @endif
+                    @endif
+                @endforeach
+            @endif
         @endforeach
     </nav>
 
