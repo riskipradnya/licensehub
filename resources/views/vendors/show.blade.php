@@ -16,7 +16,9 @@
             </div>
             <div class="flex gap-2">
                 <a href="{{ route('vendors.index') }}" class="btn btn-secondary text-sm">← Back</a>
+                @if(auth()->user()->role !== 'finance_team')
                 <a href="{{ route('vendors.edit', $vendor) }}" class="btn btn-secondary text-sm">✏️ Edit Vendor</a>
+                @endif
             </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

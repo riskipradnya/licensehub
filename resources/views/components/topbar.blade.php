@@ -17,13 +17,13 @@
 
     <div class="flex items-center gap-3">
         {{-- SEARCH --}}
-        <div class="hidden md:flex items-center relative">
+        <!-- <div class="hidden md:flex items-center relative">
             <svg class="w-4 h-4 absolute left-3" style="color: var(--color-text-secondary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
             <input type="text" placeholder="Search licenses, vendors..."
                    class="form-input pl-10 w-64 text-sm py-2" id="global-search">
-        </div>
+        </div> -->
 
         {{-- DARK MODE TOGGLE --}}
         <button @click="$store.darkMode.toggle()" class="text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white p-2 rounded-lg transition-colors" id="dark-mode-toggle"

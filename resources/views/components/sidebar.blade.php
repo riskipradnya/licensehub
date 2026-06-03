@@ -14,19 +14,19 @@ $menuGroups = [
     ],
     [
         'label' => 'IT Department',
-        'roles' => ['super_admin', 'it_team'],
+        'roles' => ['super_admin', 'it_team', 'finance_team'],
         'items' => [
-            ['name' => 'License Management', 'icon' => 'document-text', 'route' => 'licenses', 'roles' => ['super_admin', 'it_team'],
+            ['name' => 'License Management', 'icon' => 'document-text', 'route' => 'licenses', 'roles' => ['super_admin', 'it_team', 'finance_team'],
                 'children' => [
-                    ['name' => 'License List', 'route' => 'licenses'],
-                    ['name' => 'Add License', 'route' => 'licenses/create'],
-                    ['name' => 'Categories', 'route' => 'licenses/categories'],
+                    ['name' => 'License List', 'route' => 'licenses', 'roles' => ['super_admin', 'it_team', 'finance_team']],
+                    ['name' => 'Add License', 'route' => 'licenses/create', 'roles' => ['super_admin', 'it_team']],
+                    ['name' => 'Categories', 'route' => 'licenses/categories', 'roles' => ['super_admin', 'it_team']],
                 ]
             ],
-            ['name' => 'Vendor Management', 'icon' => 'building-office', 'route' => 'vendors', 'roles' => ['super_admin', 'it_team'],
+            ['name' => 'Vendor Management', 'icon' => 'building-office', 'route' => 'vendors', 'roles' => ['super_admin', 'it_team', 'finance_team'],
                 'children' => [
-                    ['name' => 'Vendor List', 'route' => 'vendors'],
-                    ['name' => 'Add Vendor', 'route' => 'vendors/create'],
+                    ['name' => 'Vendor List', 'route' => 'vendors', 'roles' => ['super_admin', 'it_team', 'finance_team']],
+                    ['name' => 'Add Vendor', 'route' => 'vendors/create', 'roles' => ['super_admin', 'it_team']],
                 ]
             ],
             ['name' => 'Documents', 'icon' => 'folder', 'route' => 'documents', 'roles' => ['super_admin', 'it_team']],
@@ -130,10 +130,12 @@ $menuGroups = [
                                      x-transition:enter-end="opacity-100 translate-y-0"
                                      class="ml-6 mt-1 space-y-0.5 border-l border-white/10 pl-3">
                                     @foreach($item['children'] as $child)
-                                        <a href="/{{ $child['route'] }}"
-                                           class="sidebar-link text-xs py-1.5 {{ $currentRoute === $child['route'] ? 'active' : '' }}">
-                                            {{ $child['name'] }}
-                                        </a>
+                                        @if(!isset($child['roles']) || in_array($userRole, $child['roles']))
+                                            <a href="/{{ $child['route'] }}"
+                                               class="sidebar-link text-xs py-1.5 {{ $currentRoute === $child['route'] ? 'active' : '' }}">
+                                                {{ $child['name'] }}
+                                            </a>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>

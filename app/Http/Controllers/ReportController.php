@@ -33,6 +33,37 @@ class ReportController extends Controller
             return redirect()->route('reports.index', ['year' => $fallbackYear]);
         }
 
+        $data = $this->getReportData($year);
+        $data['availableYears'] = $availableYears;
+        $data['year'] = $year;
+
+        return view('finance.reports', $data);
+    }
+
+    public function exportFinancialPdf(Request $request)
+    {
+        $year = (int) $request->input('year', now()->year);
+        $data = $this->getReportData($year);
+        $data['year'] = $year;
+        $data['itemizedPayments'] = Payment::with(['license.vendor', 'license.category'])
+            ->where('status', 'paid')
+            ->whereYear('payment_date', $year)
+            ->orderBy('payment_date', 'asc')
+            ->get();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf', $data);
+        
+        // Opsional: atur kertas dan orientasi
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download("Annual_Financial_Report_{$year}.pdf");
+    }
+
+    /**
+     * Helper untuk mengumpulkan seluruh data laporan keuangan untuk suatu tahun.
+     */
+    private function getReportData(int $year): array
+    {
         // Ambil semua payment lunas di tahun tersebut beserta relasinya
         $payments = Payment::with(['license.vendor', 'license.category'])
             ->where('status', 'paid')
@@ -55,7 +86,6 @@ class ReportController extends Controller
             $monthIndex = (int) $payment->payment_date->format('n') - 1;
             $monthlySpend[$monthIndex] += $payment->amount;
         }
-
 
         // 5. Category Spend (Grouping)
         $categories = [];
@@ -135,9 +165,7 @@ class ReportController extends Controller
             ];
         }
 
-        return view('finance.reports', compact(
-            'availableYears',
-            'year',
+        return compact(
             'totalAnnualSpend',
             'totalPayments',
             'totalVendors',
@@ -146,6 +174,6 @@ class ReportController extends Controller
             'categoryLabels',
             'categoryData',
             'topVendors'
-        ));
+        );
     }
 }

@@ -5,10 +5,12 @@
             <h2 class="text-xl font-bold" style="color: var(--color-text-primary);">Vendor Management</h2>
             <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Kelola data vendor dan kontak support</p>
         </div>
+        @if(auth()->user()->role !== 'finance_team')
         <a href="{{ route('vendors.create') }}" class="btn btn-primary" id="add-vendor-btn">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Add Vendor
         </a>
+        @endif
     </div>
 
     {{-- SEARCH --}}

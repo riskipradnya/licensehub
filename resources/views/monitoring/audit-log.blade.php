@@ -20,7 +20,7 @@
 
         <!-- Vertical Timeline Container -->
         <div class="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/50 shadow-lg rounded-xl p-6 lg:p-8">
-            <div class="relative border-l border-slate-200 dark:border-slate-700/50 ml-4 space-y-10">
+            <div class="relative border-l border-slate-200 dark:border-slate-700/50 ml-4">
                 
                 @forelse($activities as $activity)
                     @php
@@ -62,7 +62,7 @@
                         };
                     @endphp
 
-                    <div class="relative pl-8">
+                    <div class="relative pl-8 border-b border-slate-200 dark:border-slate-700/50 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
                         <!-- Icon Node (Avatar) -->
                         <span class="absolute -left-4 top-1 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#1E293B] shadow-sm overflow-hidden shrink-0">
                             @if($activity->causer)

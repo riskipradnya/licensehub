@@ -1,11 +1,12 @@
 <x-app-layout title="Dashboard" :breadcrumbs="[['label' => 'Dashboard']]">
 
     {{-- STAT CARDS --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6 stat-cards-grid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6 stat-cards-grid">
         <x-stat-card label="Active Licenses" :value="$activeLicenses" variant="active" />
         <x-stat-card label="Expiring Soon" :value="$expiringSoon" variant="warning" />
         <x-stat-card label="Expired" :value="$expiredLicenses" variant="danger" />
-        <x-stat-card label="Total License Cost" :value="$totalMonthlyCost" variant="info" prefix="Rp " />
+        <x-stat-card label="Total Investasi Beli Putus" :value="$totalPerpetualCost" variant="info" prefix="Rp " />
+        <x-stat-card label="Estimasi Beban Tahunan (ARC)" :value="$annualRecurringCost" variant="warning" prefix="Rp " />
     </div>
 
     {{-- CHARTS & ALERTS ROW --}}
@@ -14,11 +15,23 @@
         <div class="lg:col-span-2 card">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-semibold" style="color: var(--color-text-primary);">Tren Biaya Lisensi</h3>
-                <select onchange="window.location.href='?filter='+this.value" class="form-select text-xs py-1.5 pl-3 pr-8 rounded-md border-gray-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" style="background: var(--color-content-bg); color: var(--color-text-primary);">
-                    <option value="1_month" {{ $filter === '1_month' ? 'selected' : '' }}>1 Bulan Terakhir</option>
-                    <option value="6_months" {{ $filter === '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
-                    <option value="12_months" {{ $filter === '12_months' ? 'selected' : '' }}>1 Tahun Terakhir</option>
-                </select>
+                <form x-data="{ filterType: '{{ $filter }}' }" method="GET" action="{{ route('dashboard') }}" class="flex flex-col sm:flex-row items-center gap-2">
+                    <select name="filter" x-model="filterType" @change="if(filterType !== 'custom') $el.form.submit()" class="form-select text-xs py-1.5 pl-3 pr-8 rounded-md border-gray-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" style="background: var(--color-content-bg); color: var(--color-text-primary);">
+                        <option value="3_months">Proyeksi 3 Bulan Ke Depan</option>
+                        <option value="6_months">Proyeksi 6 Bulan Ke Depan</option>
+                        <option value="12_months">Proyeksi 1 Tahun Ke Depan</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+
+                    <div x-show="filterType === 'custom'" x-cloak class="flex items-center gap-2">
+                        <input type="date" name="start_date" value="{{ request('start_date', $startDateStr ?? '') }}" class="text-xs py-1.5 px-2 rounded-md border-gray-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500" style="background: var(--color-content-bg); color: var(--color-text-primary);">
+                        <span class="text-xs text-gray-500 dark:text-slate-400">to</span>
+                        <input type="date" name="end_date" value="{{ request('end_date', $endDateStr ?? '') }}" class="text-xs py-1.5 px-2 rounded-md border-gray-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500" style="background: var(--color-content-bg); color: var(--color-text-primary);">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors">
+                            Filter
+                        </button>
+                    </div>
+                </form>
             </div>
             <div class="relative w-full h-80 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/50 rounded-xl p-4 shadow-sm">
                 <canvas id="trendChart"></canvas>

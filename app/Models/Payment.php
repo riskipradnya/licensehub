@@ -71,7 +71,7 @@ class Payment extends Model
                         });
                 }
                 
-                \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\LicenseExpiringNotification($payment->license, 365, 'active'));
+                \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\LicenseResolvedNotification($payment->license));
             }
         };
 

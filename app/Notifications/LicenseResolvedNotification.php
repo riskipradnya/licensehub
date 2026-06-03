@@ -69,11 +69,8 @@ class LicenseResolvedNotification extends Notification implements ShouldQueue
 
         if ($latestReceipt && $latestReceipt->file_path) {
             if (app()->environment('local')) {
-                // Tambahkan parameter 'url' di sini juga!
-                $payload['file'] = 'https://docs.fonnte.com/wp-content/uploads/2022/09/Logo-Fonnte-300x72.png';
                 $payload['url']  = 'https://docs.fonnte.com/wp-content/uploads/2022/09/Logo-Fonnte-300x72.png';
             } else {
-                $payload['file'] = asset('storage/' . $latestReceipt->file_path);
                 $payload['url']  = asset('storage/' . $latestReceipt->file_path);
             }
         }

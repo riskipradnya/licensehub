@@ -16,11 +16,44 @@ class DashboardController extends Controller
      */
     public function index(Request $request): View
     {
+        // ── Date Logic & Filter ─────────
+        $filter = $request->query('filter', '6_months');
+        
+        if ($filter === 'custom' && $request->has(['start_date', 'end_date'])) {
+            $startDate = Carbon::parse($request->query('start_date'))->startOfDay();
+            $endDate = Carbon::parse($request->query('end_date'))->endOfDay();
+        } else {
+            $monthsToAdd = match($filter) {
+                '3_months'  => 3,
+                '6_months'  => 6,
+                '12_months' => 12,
+                default     => 6,
+            };
+            $startDate = now()->startOfMonth();
+            $endDate = now()->addMonths($monthsToAdd)->endOfMonth();
+        }
+
         // ── Stat Cards ──────────────────────────────────────────
+        // Stat Cards remain global point-in-time metrics and are unaffected by chart date filters
         $activeLicenses  = License::where('status', 'active')->count();
         $expiringSoon    = License::where('status', 'expiring')->count();
         $expiredLicenses = License::where('status', 'expired')->count();
-        $totalMonthlyCost = (float) License::whereIn('status', ['active', 'expiring'])->sum('cost');
+        
+        $totalPerpetualCost = (float) License::whereIn('status', ['active', 'expiring'])
+            ->where('billing_cycle', 'one_time')
+            ->sum('cost');
+
+        $annualRecurringCost = (float) License::whereIn('status', ['active', 'expiring'])
+            ->where('billing_cycle', '!=', 'one_time')
+            ->get()
+            ->sum(function ($license) {
+                return match($license->billing_cycle) {
+                    'monthly'   => $license->cost * 12,
+                    'quarterly' => $license->cost * 4,
+                    'yearly'    => $license->cost,
+                    default     => 0,
+                };
+            });
 
         // ── Expiring Soon Table (licenses expiring within 31 days) ──
         $expiringLicenses = License::with(['vendor', 'category'])
@@ -51,18 +84,6 @@ class DashboardController extends Controller
             });
 
         // ── Chart Data (Historical Cost Trend) ─────────
-        $filter = $request->query('filter', '6_months');
-        
-        $monthsToSub = match($filter) {
-            '1_month'   => 1,
-            '12_months' => 12,
-            default     => 6,
-        };
-
-        $startDate = now()->subMonths($monthsToSub)->startOfMonth();
-        $endDate = now()->endOfMonth();
-
-        // Ambil data dari database yang expired di rentang waktu tersebut
         $licensesInPeriod = License::whereNotNull('expiry_date')
             ->whereBetween('expiry_date', [$startDate, $endDate])
             ->get();
@@ -71,31 +92,39 @@ class DashboardController extends Controller
         $chartValues = [];
 
         // Buat urutan bulan secara berurutan (chronological) dari terlama ke terbaru
-        for ($i = $monthsToSub - 1; $i >= 0; $i--) {
-            $monthObj = now()->subMonths($i);
-            $label = $monthObj->format('M Y'); // e.g. 'Jan 2026'
-            
+        $startPeriod = $startDate->copy()->startOfMonth();
+        $endPeriod = $endDate->copy()->startOfMonth();
+        
+        while ($startPeriod <= $endPeriod) {
+            $label = $startPeriod->format('M Y');
             $chartLabels[] = $label;
             
-            // Cari total cost untuk bulan dan tahun ini
-            $monthlyTotal = $licensesInPeriod->filter(function($lic) use ($monthObj) {
-                return Carbon::parse($lic->expiry_date)->format('Y-m') === $monthObj->format('Y-m');
+            $monthlyTotal = $licensesInPeriod->filter(function($lic) use ($startPeriod) {
+                return Carbon::parse($lic->expiry_date)->format('Y-m') === $startPeriod->format('Y-m');
             })->sum('cost');
-
-            // Format ke dalam jutaan jika angkanya besar, tapi sementara keep raw value biar view mudah
+            
             $chartValues[] = (float) $monthlyTotal;
+            
+            $startPeriod->addMonth();
         }
+
+        // Pass dates back to view for the date picker
+        $startDateStr = $startDate->format('Y-m-d');
+        $endDateStr = $endDate->format('Y-m-d');
 
         return view('dashboard.index', compact(
             'activeLicenses',
             'expiringSoon',
             'expiredLicenses',
-            'totalMonthlyCost',
+            'totalPerpetualCost',
+            'annualRecurringCost',
             'expiringLicenses',
             'alerts',
             'chartLabels',
             'chartValues',
-            'filter'
+            'filter',
+            'startDateStr',
+            'endDateStr'
         ));
     }
 }

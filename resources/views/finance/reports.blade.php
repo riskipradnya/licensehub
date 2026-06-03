@@ -11,7 +11,7 @@
                     <option value="{{ $y }}" @selected($y == $year)>{{ $y }}</option>
                 @endforeach
             </select>
-            <button class="btn btn-secondary text-sm" id="export-report">📊 Export PDF</button>
+            <a href="{{ route('reports.exportPdf', ['year' => $year]) }}" class="btn btn-secondary text-sm">📊 Export PDF</a>
         </div>
     </div>
 
@@ -85,7 +85,6 @@
     </div>
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -171,17 +170,6 @@
         }
     });
 
-    document.getElementById('export-report').addEventListener('click', function() {
-        const element = document.getElementById('report-content');
-        const opt = {
-            margin: 0.5,
-            filename: 'Financial_Report_{{ $year }}.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-        };
-        html2pdf().set(opt).from(element).save();
-    });
 </script>
 @endpush
 

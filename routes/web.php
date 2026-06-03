@@ -51,18 +51,23 @@ Route::middleware('auth')->group(function () {
     // ==========================================================
     //  IT DEPARTMENT & NOTIFICATION SETUP
     // ==========================================================
+    Route::middleware('role:super_admin,it_team,finance_team')->group(function () {
+        Route::resource('licenses', LicenseController::class)->only(['index', 'show']);
+        Route::resource('vendors', VendorController::class)->only(['index', 'show']);
+    });
+
     Route::middleware('role:super_admin,it_team')->group(function () {
         Route::prefix('licenses')->name('licenses.')->group(function () {
             Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
         });
-        Route::resource('licenses', LicenseController::class);
-        Route::resource('vendors', VendorController::class);
+        Route::resource('licenses', LicenseController::class)->except(['index', 'show']);
+        Route::resource('vendors', VendorController::class)->except(['index', 'show']);
         
         Route::delete('/documents/vendor/{vendor}/{field}', [DocumentController::class, 'destroyVendorDoc'])->name('documents.destroyVendorDoc');
         Route::resource('documents', DocumentController::class)->only(['index', 'store', 'show', 'destroy']);
         
         Route::resource('notification-settings', App\Http\Controllers\NotificationSettingController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
+            ->only(['index', 'store', 'edit', 'update', 'destroy']);
     });
 
     // ==========================================================
@@ -102,6 +107,7 @@ Route::middleware('auth')->group(function () {
 
         // Finance - Reports
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export-pdf', [ReportController::class, 'exportFinancialPdf'])->name('reports.exportPdf');
     });
 
     // ==========================================================

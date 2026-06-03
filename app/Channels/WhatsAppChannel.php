@@ -36,22 +36,16 @@ class WhatsAppChannel
                 'message' => $data['message'],
             ];
 
-            // SIAPKAN PELUNCUR HTTP
-            $request = Http::withHeaders([
-                'Authorization' => $apiToken
-            ]);
+            // SIAPKAN PELUNCUR HTTP (Toleransi Timeout 30 detik untuk Hosting)
+            $request = Http::timeout(30)
+                ->withoutVerifying()
+                ->withHeaders([
+                    'Authorization' => $apiToken
+                ]);
 
-            // EKSEKUSI SATU PAKET: Sisipkan file fisik beserta pesan utamanya
-            if (isset($data['file']) && file_exists($data['file'])) {
-                Log::info('Fonnte: Mengirim SATU PAKET (Teks + PDF Lokal)...', ['path' => $data['file']]);
-                
-                // attach() mengubah request jadi multipart/form-data
-                $request->attach('file', file_get_contents($data['file']), 'invoice.pdf');
-                
-            } elseif (isset($data['url'])) {
+            // EKSEKUSI PENGIRIMAN: Gunakan parameter URL publik agar Fonnte Server yang mendownload sendiri
+            if (isset($data['url'])) {
                 Log::info('Fonnte: Mengirim SATU PAKET (Teks + URL Link)...', ['url' => $data['url']]);
-                
-                // Jika pakai link publik, cukup tambahkan ke dalam array payload
                 $payload['url'] = $data['url'];
             } else {
                 Log::info('Fonnte: Mengirim Teks Saja (Tanpa Lampiran)...');

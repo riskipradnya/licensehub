@@ -13,7 +13,7 @@
 
         <!-- Modal Native HTML5 -->
         <dialog id="recipientModal" class="p-0 bg-transparent rounded-xl shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-none" style="margin: auto;">
-            <div class="w-full max-w-3xl bg-white rounded-xl text-left overflow-hidden" style="background: var(--color-card-bg); width: 800px; max-width: 95vw;">
+            <div class="w-full bg-white rounded-xl text-left overflow-hidden mx-auto" style="background: var(--color-card-bg); width: 768px; max-width: 95vw;">
                 <form action="{{ route('notification-settings.store') }}" method="POST">
                     @csrf
                     <div class="px-6 pt-6 pb-4">
@@ -89,6 +89,45 @@
                             </td>
                             <td class="text-center">
                                 <div class="flex justify-center items-center gap-2 w-full">
+                                    <!-- Edit Button & Modal -->
+                                    <button type="button" onclick="document.getElementById('editModal_{{ $recipient->id }}').showModal()" class="btn btn-ghost text-blue-500 p-1" title="Edit">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+
+                                    <dialog id="editModal_{{ $recipient->id }}" class="p-0 bg-transparent rounded-xl shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-none" style="margin: auto;">
+                                        <div class="w-full bg-white rounded-xl text-left overflow-hidden mx-auto" style="background: var(--color-card-bg); width: 768px; max-width: 95vw;">
+                                            <form action="{{ route('notification-settings.update', $recipient->id) }}" method="POST">
+                                                @csrf
+                                                @method('PUT')
+                                                <!-- Preserve active status during modal edit -->
+                                                @if($recipient->is_active)
+                                                <input type="hidden" name="is_active" value="1">
+                                                @endif
+                                                <div class="px-6 pt-6 pb-4">
+                                                    <h3 class="text-lg leading-6 font-medium mb-4" style="color: var(--color-text-primary);">Edit Recipient</h3>
+                                                    <div class="space-y-4 text-left">
+                                                        <div>
+                                                            <label class="form-label">Name</label>
+                                                            <input type="text" name="name" value="{{ $recipient->name }}" class="form-input" required>
+                                                        </div>
+                                                        <div>
+                                                            <label class="form-label">Email</label>
+                                                            <input type="email" name="email" value="{{ $recipient->email }}" class="form-input" required>
+                                                        </div>
+                                                        <div>
+                                                            <label class="form-label">WhatsApp</label>
+                                                            <input type="text" name="whatsapp" value="{{ $recipient->whatsapp }}" class="form-input">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="px-6 py-4 flex justify-end gap-3" style="background: rgba(0,0,0,0.02); border-top: 1px solid var(--color-border);">
+                                                    <button type="button" onclick="document.getElementById('editModal_{{ $recipient->id }}').close()" class="btn btn-secondary">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary">Update Recipient</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </dialog>
+
                                     <form action="{{ route('notification-settings.update', $recipient->id) }}" method="POST">
                                         @csrf
                                         @method('PUT')

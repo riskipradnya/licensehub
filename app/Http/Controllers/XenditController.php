@@ -42,7 +42,7 @@ class XenditController extends Controller
      */
     protected function baseUrl(): string
     {
-        return config('xendit.base_url');
+        return 'https://api.xendit.co';
     }
 
     /**
@@ -50,8 +50,7 @@ class XenditController extends Controller
      */
     protected function secretKey(): string
     {
-        // Gunakan trim() untuk membunuh spasi gaib dan gunakan murni hardcode
-        return trim('xnd_development_UKom9fCk3xUOTQVxh8rq3JBQC6hffRLLNtmyzwUTkz9PvLSsosMIZJ3tlAWc');
+        return trim((string) env('XENDIT_SECRET_KEY'));
     }
 
     /**
@@ -184,7 +183,7 @@ class XenditController extends Controller
         Log::info('TOKEN ASLI DARI XENDIT ADALAH: ' . $tokenDariXendit);
 
         $callbackToken = $request->header('X-Callback-Token');
-        $expectedToken = 'UKom9fCk3xUOTQVxh8rq3JBQC6hffRLLNtmyzwUTkz9PvLSsosMIZJ3tlAWc';
+        $expectedToken = trim((string) env('XENDIT_WEBHOOK_TOKEN'));
 
         $cleanCallback = trim((string) $callbackToken);
         $cleanExpected = trim((string) $expectedToken);
@@ -199,11 +198,11 @@ class XenditController extends Controller
             return response()->json(['message' => 'Webhook Test Berhasil!'], 200);
         }
 
-        // 3. Verifikasi Keamanan Token (Hanya berjalan untuk transaksi aslinya nanti)
-        // if ($cleanExpected && $cleanCallback !== $cleanExpected) {
-        //     Log::warning('Xendit callback: invalid token', ['received' => $cleanCallback]);
-        //     return response()->json(['message' => 'Invalid callback token'], 403);
-        // }
+        // 3. Verifikasi Keamanan Token
+        if ($cleanExpected && $cleanCallback !== $cleanExpected) {
+            Log::warning('Xendit callback: invalid token', ['received' => $cleanCallback]);
+            return response()->json(['message' => 'Invalid callback token'], 403);
+        }
 
         try {
             if (!$externalId) {
@@ -233,14 +232,6 @@ class XenditController extends Controller
             Log::error('Xendit callback error', ['message' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        
-        // Ambil daftar penerima notifikasi (IT/Finance)
-        $recipients = \App\Models\NotificationRecipient::where('is_active', true)->get();
-
-        // Kirim notifikasi Resolved secara otomatis via antrean (Queue)
-        \Illuminate\Support\Facades\Notification::send($recipients, new \App\Notifications\LicenseResolvedNotification($license));
-
     }
 
     /**
